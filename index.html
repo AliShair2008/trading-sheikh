@@ -14,7 +14,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-    <!-- LICENSE LOCK SCREEN (Ensure 'hidden' is removed by default, JS will control it) -->
+    <!-- LICENSE LOCK SCREEN -->
     <div id="license-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="text-center space-y-1">
@@ -53,12 +53,18 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Capital</p>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl relative group">
+                <div class="flex justify-between items-center">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Capital</p>
+                    <button onclick="editCapitalPrompt()" class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded hover:bg-emerald-500/20 transition">Edit</button>
+                </div>
                 <p id="display-capital" class="text-2xl font-bold text-white mt-1">$177.00</p>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's PnL</p>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl relative group">
+                <div class="flex justify-between items-center">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's PnL</p>
+                    <button onclick="resetDailyPnl()" class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded hover:bg-slate-700 transition">Reset</button>
+                </div>
                 <p id="display-pnl" class="text-2xl font-bold text-emerald-400 mt-1">$0.00</p>
             </div>
         </div>
@@ -99,7 +105,7 @@
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center">
                     <div><span class="text-xs text-slate-400 block">Risk Amount</span><span id="res-risk-amt" class="text-base font-bold text-red-400">$35.40</span></div>
                     <div><span class="text-xs text-slate-400 block">Suggested Lot</span><span id="res-lot" class="text-base font-bold text-emerald-400">0.07</span></div>
-                    <div><span class="text-xs text-slate-400 block">1:2 Target</span><span id="res-tp" class="text-base font-bold text-emerald-400">$70.80</span></div>
+                    <div><span class="text-xs text-slate-400 block">Target Return</span><span id="res-tp" class="text-base font-bold text-emerald-400">$70.80</span></div>
                 </div>
 
                 <!-- Custom PnL Input Option -->
@@ -110,11 +116,12 @@
 
                 <div class="space-y-3 pt-2">
                     <label class="block text-xs font-semibold text-slate-400">Trade Management / Target Mode</label>
-                    <div class="grid grid-cols-4 gap-2">
-                        <button onclick="setManagement('BE')" id="btn-be" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">Break-Even</button>
-                        <button onclick="setManagement('1:1')" id="btn-11" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1 : 1</button>
-                        <button onclick="setManagement('1:2')" id="btn-12" class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium">1 : 2</button>
-                        <button onclick="setManagement('1:3')" id="btn-13" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1 : 3</button>
+                    <div class="grid grid-cols-5 gap-1.5">
+                        <button onclick="setManagement('BE')" id="btn-be" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">BE</button>
+                        <button onclick="setManagement('1:1')" id="btn-11" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1:1</button>
+                        <button onclick="setManagement('1:2')" id="btn-12" class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium">1:2</button>
+                        <button onclick="setManagement('1:3')" id="btn-13" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1:3</button>
+                        <button onclick="setManagement('1:5')" id="btn-15" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1:5</button>
                     </div>
                 </div>
 
@@ -124,8 +131,8 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button onclick="closeTrade('WIN')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">✅ Close as WIN</button>
-                    <button onclick="closeTrade('LOSS')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition">❌ Close as LOSS</button>
+                    <button onclick="closeTrade('WIN')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-900/20">✅ Close as WIN</button>
+                    <button onclick="closeTrade('LOSS')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-900/20">❌ Close as LOSS</button>
                 </div>
             </div>
         </div>
@@ -135,7 +142,10 @@
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-lg font-bold text-white">📊 Performance Stats</h2>
-                    <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/30 transition">🗑️ Clear History</button>
+                    <div class="space-x-2">
+                        <button onclick="exportHistoryCSV()" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-blue-500/30 transition">📥 Export CSV</button>
+                        <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/30 transition">🗑️ Clear</button>
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-xs text-slate-400 block">Total</span><span id="stat-total" class="text-xl font-bold text-white">0</span></div>
@@ -168,6 +178,26 @@
         let currentKey = "";
         let capital = 177, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
 
+        // Simple Audio Beep Feedback (Web Audio API)
+        function playSound(type) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                if(type === 'win') {
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                } else {
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                }
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
         function getDeviceId() {
             let deviceId = localStorage.getItem('ts_device_id');
             if (!deviceId) {
@@ -180,7 +210,6 @@
         function checkLicense() {
             let savedKey = localStorage.getItem('ts_active_license');
             if (!savedKey) {
-                // Ensure lock screen is visible if no key exists
                 document.getElementById('license-screen').classList.remove('hidden');
             } else {
                 currentKey = savedKey;
@@ -287,9 +316,12 @@
 
         function setManagement(type) {
             activeManagement = type;
-            ['BE', '1:1', '1:2', '1:3'].forEach(t => {
-                let btn = document.getElementById('btn-' + t.toLowerCase().replace(':',''));
-                btn.className = (t === type) ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium' : 'bg-slate-800 text-xs py-2 rounded-lg font-medium';
+            ['BE', '1:1', '1:2', '1:3', '1:5'].forEach(t => {
+                let btnId = 'btn-' + t.toLowerCase().replace(':','');
+                let btn = document.getElementById(btnId);
+                if(btn) {
+                    btn.className = (t === type) ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium' : 'bg-slate-800 text-xs py-2 rounded-lg font-medium';
+                }
             });
             calculateLot();
         }
@@ -349,7 +381,11 @@
                 }
             }
 
-            let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
+            let rrMultiplier = 0;
+            if(activeManagement === '1:1') rrMultiplier = 1;
+            else if(activeManagement === '1:2') rrMultiplier = 2;
+            else if(activeManagement === '1:3') rrMultiplier = 3;
+            else if(activeManagement === '1:5') rrMultiplier = 5;
             
             document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
             document.getElementById('res-risk-amt').innerText = '$' + riskAmount.toFixed(2);
@@ -364,9 +400,32 @@
             pnlEl.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
         }
 
+        function editCapitalPrompt() {
+            let newCap = prompt("Apna naya total capital enter karein:", capital.toFixed(2));
+            if(newCap !== null && !isNaN(newCap)) {
+                capital = parseFloat(newCap);
+                document.getElementById('capital').value = capital.toFixed(2);
+                updateDisplay();
+                calculateLot();
+                saveUserData();
+            }
+        }
+
+        function resetDailyPnl() {
+            if(confirm("Kya aap aaj ka PnL reset kar ke $0 karna chahte hain?")) {
+                todayPnl = 0;
+                updateDisplay();
+                saveUserData();
+            }
+        }
+
         async function closeTrade(result) {
             let riskAmount = (capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
-            let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
+            let rrMultiplier = 0;
+            if(activeManagement === '1:1') rrMultiplier = 1;
+            else if(activeManagement === '1:2') rrMultiplier = 2;
+            else if(activeManagement === '1:3') rrMultiplier = 3;
+            else if(activeManagement === '1:5') rrMultiplier = 5;
             
             let customVal = parseFloat(document.getElementById('custom-pnl').value);
             let tradeAmount = isNaN(customVal) ? (result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount) : (result === 'WIN' ? Math.abs(customVal) : -Math.abs(customVal));
@@ -375,6 +434,8 @@
             todayPnl += tradeAmount;
             document.getElementById('capital').value = capital.toFixed(2);
             updateDisplay();
+
+            playSound(result === 'WIN' ? 'win' : 'loss');
 
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
 
@@ -406,6 +467,25 @@
                 await saveUserData();
                 alert('History cleared successfully!');
             }
+        }
+
+        function exportHistoryCSV() {
+            if(tradesHistory.length === 0) {
+                alert("Export karne ke liye koi history nahi hai!");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,Result,Asset,Mode,Amount,Time,Note\n";
+            tradesHistory.forEach(t => {
+                let row = [t.result, `"${t.asset}"`, t.management, t.amount.toFixed(2), t.time, `"${t.note}"`].join(",");
+                csvContent += row + "\n";
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "trading_sheikh_history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function updateStats() {
