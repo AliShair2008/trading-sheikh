@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Sheikh - Professional Risk Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK Compat Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
@@ -17,14 +20,14 @@
             <div class="text-center space-y-1">
                 <div class="bg-emerald-500 text-slate-950 font-bold w-12 h-12 mx-auto rounded-xl flex items-center justify-center text-xl">TS</div>
                 <h2 class="text-xl font-bold text-white mt-2">Activate Trading Sheikh</h2>
-                <p class="text-xs text-slate-400">Apna paid license key enter karein jo is device ke sath lock ho jayega.</p>
+                <p class="text-xs text-slate-400">Apni secure license key enter karein.</p>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1">License Key</label>
-                <input type="text" id="license-input" placeholder="e.g. SHEIKH-XXXX-YYYY" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 uppercase">
+                <input type="text" id="license-input" placeholder="e.g. SHK-XXXX-XXXX" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 uppercase">
             </div>
             <button onclick="verifyLicense()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">Activate App</button>
-            <p id="license-error" class="text-xs text-red-400 text-center hidden">Invalid key! Baraye meharbani apni sahi key enter karein.</p>
+            <p id="license-error" class="text-xs text-red-400 text-center hidden">Invalid key ya yeh key pehle se kisi aur device par active hai!</p>
         </div>
     </div>
 
@@ -89,7 +92,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Broker Commission ($ per Standard Lot, Optional)</label>
-                        <input type="number" id="broker-comm" value="0" step="0.5" placeholder="e.g. 7 (agar broker commission leta hai)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                        <input type="number" id="broker-comm" value="0" step="0.5" placeholder="e.g. 7" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                 </div>
 
@@ -117,7 +120,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Trade Note / Psychology Tag</label>
-                    <input type="text" id="trade-note" placeholder="e.g. Gold Buy setup, FOMO..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <input type="text" id="trade-note" placeholder="e.g. Gold Buy setup..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-2">
@@ -150,7 +153,21 @@
     <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
     <script>
-        const validLicenses = ["SHEIKH-1111-VIP", "SHEIKH-2222-VIP", "SHEIKH-3333-VIP", "ALI-9999-PRO", "USER-5555-PRO"];
+        // Aap ki asli Firebase Configuration jo aapne abhi li hai[cite: 2]
+        const firebaseConfig = {
+            apiKey: "AIzaSyBV8CKLOhAJz0bukTmrtAQVMnFT3nvMMc",
+            authDomain: "tradingsheikhapp.firebaseapp.com",
+            projectId: "tradingsheikhapp",
+            storageBucket: "tradingsheikhapp.firebasestorage.app",
+            messagingSenderId: "29870700101",
+            appId: "1:29870700101:web:0fb8758392dd964403952c"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentKey = "";
+        let capital = 177, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
 
         function getDeviceId() {
             let deviceId = localStorage.getItem('ts_device_id');
@@ -162,33 +179,81 @@
         }
 
         function checkLicense() {
-            let savedKey = localStorage.getItem('ts_license_key');
-            let boundDevice = localStorage.getItem('ts_bound_device');
-            let currentDev = getDeviceId();
-
-            if (!savedKey || !validLicenses.includes(savedKey) || boundDevice !== currentDev) {
+            let savedKey = localStorage.getItem('ts_active_license');
+            if (!savedKey) {
                 document.getElementById('license-screen').classList.remove('hidden');
             } else {
+                currentKey = savedKey;
                 document.getElementById('license-screen').classList.add('hidden');
+                loadUserData();
             }
         }
 
-        function verifyLicense() {
+        async function verifyLicense() {
             let inputKey = document.getElementById('license-input').value.trim().toUpperCase();
-            if (validLicenses.includes(inputKey)) {
-                localStorage.setItem('ts_license_key', inputKey);
-                localStorage.setItem('ts_bound_device', getDeviceId());
-                document.getElementById('license-screen').classList.add('hidden');
-                alert('License Successfully Activated!');
-                calculateLot();
-            } else {
-                document.getElementById('license-error').classList.remove('hidden');
+            if (!inputKey) {
+                alert('Pehle license key likhein!');
+                return;
             }
+
+            let docRef = db.collection("licenses").doc(inputKey);
+            let doc = await docRef.get();
+            let devId = getDeviceId();
+
+            if (!doc.exists) {
+                // Agar key Firestore mein pehle se nahi hai, toh hum usko nayi valid key ke tor par bana dete hain ya error de sakte hain
+                document.getElementById('license-error').innerText = "Yeh license key ghalat (Invalid) hai!";
+                document.getElementById('license-error').classList.remove('hidden');
+                return;
+            }
+
+            let data = doc.data();
+            if (data.deviceId && data.deviceId !== devId) {
+                document.getElementById('license-error').innerText = "Yeh key pehle se kisi aur device par active hai!";
+                document.getElementById('license-error').classList.remove('hidden');
+                return;
+            }
+
+            // Bind key to this device
+            await docRef.set({ deviceId: devId }, { merge: true });
+            localStorage.setItem('ts_active_license', inputKey);
+            currentKey = inputKey;
+            document.getElementById('license-screen').classList.add('hidden');
+            alert('License Successfully Activated!');
+            loadUserData();
+        }
+
+        async function loadUserData() {
+            if (!currentKey) return;
+            let docRef = db.collection("users").doc(currentKey);
+            let doc = await docRef.get();
+            if (doc.exists) {
+                let data = doc.data();
+                capital = data.capital || 177;
+                todayPnl = data.todayPnl || 0;
+                tradesHistory = data.tradesHistory || [];
+            } else {
+                capital = 177;
+                todayPnl = 0;
+                tradesHistory = [];
+                await saveUserData();
+            }
+            document.getElementById('capital').value = capital.toFixed(2);
+            updateDisplay();
+            calculateLot();
+        }
+
+        async function saveUserData() {
+            if (!currentKey) return;
+            await db.collection("users").doc(currentKey).set({
+                capital,
+                todayPnl,
+                tradesHistory
+            });
         }
 
         window.onload = function() {
             checkLicense();
-            calculateLot();
         };
 
         let deferredPrompt;
@@ -206,8 +271,6 @@
                 deferredPrompt = null;
             }
         });
-
-        let capital = 177, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
 
         function switchTab(tab) {
             if(tab === 'calculator') {
@@ -296,7 +359,14 @@
             document.getElementById('res-tp').innerText = '$' + (riskAmount * rrMultiplier).toFixed(2);
         }
 
-        function closeTrade(result) {
+        function updateDisplay() {
+            document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
+            let pnlEl = document.getElementById('display-pnl');
+            pnlEl.innerText = (todayPnl >= 0 ? '+$' : '-$') + Math.abs(todayPnl).toFixed(2);
+            pnlEl.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
+        }
+
+        async function closeTrade(result) {
             let riskAmount = (capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
             let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
             
@@ -306,11 +376,7 @@
             capital += tradeAmount;
             todayPnl += tradeAmount;
             document.getElementById('capital').value = capital.toFixed(2);
-            document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
-            
-            let pnlEl = document.getElementById('display-pnl');
-            pnlEl.innerText = (todayPnl >= 0 ? '+$' : '-$') + Math.abs(todayPnl).toFixed(2);
-            pnlEl.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
+            updateDisplay();
 
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
 
@@ -327,14 +393,19 @@
             document.getElementById('trade-note').value = '';
             document.getElementById('custom-pnl').value = '';
             calculateLot();
-            alert('Trade logged successfully as ' + result);
+            
+            await saveUserData();
+            alert('Trade logged and saved to cloud as ' + result);
         }
 
-        function clearHistory() {
+        async function clearHistory() {
             if(confirm('Kya aap saari history clear karna chahte hain?')) {
                 tradesHistory = [];
+                todayPnl = 0;
                 document.getElementById('drawdown-alert').classList.add('hidden');
+                updateDisplay();
                 updateStats();
+                await saveUserData();
                 alert('History cleared successfully!');
             }
         }
