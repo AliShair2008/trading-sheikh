@@ -52,7 +52,7 @@
         <div class="grid grid-cols-2 gap-4">
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Capital</p>
-                <p id="display-capital" class="text-2xl font-bold text-white mt-1">$1,000.00</p>
+                <p id="display-capital" class="text-2xl font-bold text-white mt-1">$177.00</p>
             </div>
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's PnL</p>
@@ -69,7 +69,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Asset / Market</label>
                         <select id="asset-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" onchange="changeAsset()">
-                            <option value="gold" selected>Gold (XAUUSD - Pips vs Points)</option>
+                            <option value="gold" selected>Gold (XAUUSD)</option>
                             <option value="forex">Forex (EURUSD, GBPUSD etc)</option>
                             <option value="nasdaq">Nasdaq / US100</option>
                             <option value="btc">Bitcoin (BTCUSD)</option>
@@ -77,25 +77,30 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Total Capital ($)</label>
-                        <input type="number" id="capital" value="1000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                        <input type="number" id="capital" value="177" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Risk Percentage (%)</label>
-                        <input type="number" id="risk-pct" value="1" step="0.1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                        <input type="number" id="risk-pct" value="20" step="0.1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                     <div>
-                        <label id="sl-label" class="block text-xs font-semibold text-slate-400 mb-1">Stop Loss (Pips / Points)</label>
+                        <label id="sl-label" class="block text-xs font-semibold text-slate-400 mb-1">Stop Loss (Pips)</label>
                         <input type="number" id="sl-pips" value="50" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                 </div>
 
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center">
-                    <div><span class="text-xs text-slate-400 block">Risk Amount</span><span id="res-risk-amt" class="text-base font-bold text-red-400">$10.00</span></div>
-                    <div><span class="text-xs text-slate-400 block">Suggested Lot</span><span id="res-lot" class="text-base font-bold text-emerald-400">0.02</span></div>
-                    <div><span class="text-xs text-slate-400 block">1:2 Target</span><span id="res-tp" class="text-base font-bold text-emerald-400">$20.00</span></div>
+                    <div><span class="text-xs text-slate-400 block">Risk Amount</span><span id="res-risk-amt" class="text-base font-bold text-red-400">$35.40</span></div>
+                    <div><span class="text-xs text-slate-400 block">Suggested Lot</span><span id="res-lot" class="text-base font-bold text-emerald-400">0.07</span></div>
+                    <div><span class="text-xs text-slate-400 block">1:2 Target</span><span id="res-tp" class="text-base font-bold text-emerald-400">$70.80</span></div>
                 </div>
 
-                <!-- Trade Management & Custom PNL Section -->
+                <!-- Custom PnL Input Option moved right above buttons -->
+                <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                    <label class="block text-xs font-semibold text-emerald-400">⚡ Manual / Custom Profit or Loss ($) Optional</label>
+                    <input type="number" id="custom-pnl" placeholder="Agar exact dollar profit/loss dalna ho (e.g. 15 or -5)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
                 <div class="space-y-3 pt-2">
                     <label class="block text-xs font-semibold text-slate-400">Trade Management / Target Mode</label>
                     <div class="grid grid-cols-4 gap-2">
@@ -104,12 +109,6 @@
                         <button onclick="setManagement('1:2')" id="btn-12" class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium">1 : 2</button>
                         <button onclick="setManagement('1:3')" id="btn-13" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1 : 3</button>
                     </div>
-                </div>
-
-                <!-- Custom PnL Input Option moved right here -->
-                <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
-                    <label class="block text-xs font-semibold text-emerald-400">⚡ Manual / Custom Profit or Loss ($) Optional</label>
-                    <input type="number" id="custom-pnl" placeholder="Agar exact dollar profit/loss dalna ho (e.g. 15 or -5)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
                 </div>
 
                 <div>
@@ -203,7 +202,7 @@
             }
         });
 
-        let capital = 1000, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
+        let capital = 177, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
 
         function switchTab(tab) {
             if(tab === 'calculator') {
@@ -235,13 +234,13 @@
             let slLabel = document.getElementById('sl-label');
 
             if(asset === 'gold') {
-                slLabel.innerText = "Stop Loss (Pips: 50 pips = $5 | Points: 50 pts = $50)";
+                slLabel.innerText = "Stop Loss (Pips)";
                 slInput.value = 50;
             } else if(asset === 'nasdaq') {
                 slLabel.innerText = "Stop Loss (Points)";
                 slInput.value = 30;
             } else if(asset === 'btc') {
-                slLabel.innerText = "Stop Loss (Points / USD)";
+                slLabel.innerText = "Stop Loss (Points)";
                 slInput.value = 200;
             } else {
                 slLabel.innerText = "Stop Loss (Pips)";
@@ -260,22 +259,15 @@
             let lotSize = 0.01;
 
             if(asset === 'gold') {
-                // Gold pips vs points logic: 
-                // Agar user 50 pips dalta hai (jiska matlab 5.0 move hai, ie 0.1 per pip for 0.01 lot), toh risk = sl * 0.1 * lot * 10 ...
-                // Simple standard calculation: 0.01 lot par 1 pip = $0.10, aur 1 point = $1.00
-                // User ne agar 50 pips kaha hai toh wo 50 pips = 5 points = $5 risk with 0.01 lot.
-                // Yahan hum man kar chalte hain ke user pips enter kar raha hai jahan 0.01 lot par 1 pip = $0.10.
-                let pipValPer001 = 0.10; 
-                lotSize = riskAmount / (slValue * pipValPer001);
+                // Gold XAUUSD: 1 standard lot = $10 per pip (0.1 move). 
+                // Formula: Lot Size = Risk Amount / (SL * 10) -> $35.40 / (50 * 10) = 0.0708 -> 0.07
+                lotSize = riskAmount / (slValue * 10);
             } else if(asset === 'nasdaq') {
-                // US100: 0.01 lot par 1 point = $0.20 approx ya broker ke mutabiq
-                lotSize = riskAmount / (slValue * 0.20);
+                lotSize = riskAmount / (slValue * 2.0);
             } else if(asset === 'btc') {
-                // BTCUSD: 0.01 lot par 1 point = $0.01
-                lotSize = riskAmount / (slValue * 0.01);
+                lotSize = riskAmount / (slValue * 1.0);
             } else {
-                // Forex standard: 0.01 lot par 1 pip = $0.10
-                lotSize = riskAmount / (slValue * 0.10);
+                lotSize = riskAmount / (slValue * 10);
             }
 
             if(lotSize < 0.01) lotSize = 0.01;
