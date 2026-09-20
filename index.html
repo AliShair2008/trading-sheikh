@@ -3,44 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Sheikh - Professional Risk & Trade Manager</title>
+    <title>Trading Sheikh - Professional Risk Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
+    <link rel="manifest" href="manifest.json">
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
+    <!-- LICENSE LOCK SCREEN (Hidden by default if already licensed) -->
+    <div id="license-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="text-center space-y-1">
+                <div class="bg-emerald-500 text-slate-950 font-bold w-12 h-12 mx-auto rounded-xl flex items-center justify-center text-xl">TS</div>
+                <h2 class="text-xl font-bold text-white mt-2">Activate Trading Sheikh</h2>
+                <p class="text-xs text-slate-400">Apna paid license key enter karein jo is device ke sath lock ho jayega.</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">License Key</label>
+                <input type="text" id="license-input" placeholder="e.g. SHEIKH-XXXX-YYYY" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 uppercase">
+            </div>
+            <button onclick="verifyLicense()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">Activate App</button>
+            <p id="license-error" class="text-xs text-red-400 text-center hidden">Invalid key ya yeh key kisi aur device par active hai!</p>
+        </div>
+    </div>
+
     <!-- Header -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
         <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <div class="bg-emerald-500 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-lg">TS</div>
                 <h1 class="text-xl font-bold tracking-tight text-white">Trading Sheikh</h1>
             </div>
-            <div class="flex space-x-2">
-                <button onclick="switchTab('calculator')" id="nav-calc" class="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white transition">Calculator</button>
-                <button onclick="switchTab('history')" id="nav-hist" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">History & Stats</button>
+            <div class="flex items-center space-x-2">
+                <button id="install-btn" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition">📱 Install App</button>
+                <button onclick="switchTab('calculator')" id="nav-calc" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition">Calculator</button>
+                <button onclick="switchTab('history')" id="nav-hist" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">History</button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
     <main class="flex-grow max-w-4xl w-full mx-auto p-4 space-y-6">
-
-        <!-- Drawdown Alert Box -->
         <div id="drawdown-alert" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm font-medium flex items-center justify-between">
-            <span>⚠️ <strong>Warning:</strong> Aaj ka loss limit se barh gaya hai! Mazeed trade mat lo, market se door raho.</span>
+            <span>⚠️ <strong>Warning:</strong> Aaj ka loss limit se barh gaya hai! Mazeed trade mat lo.</span>
         </div>
 
-        <!-- Today PnL Summary Bar -->
         <div class="grid grid-cols-2 gap-4">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Capital</p>
                 <p id="display-capital" class="text-2xl font-bold text-white mt-1">$1,000.00</p>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's PnL</p>
                 <p id="display-pnl" class="text-2xl font-bold text-emerald-400 mt-1">$0.00</p>
             </div>
@@ -48,9 +62,8 @@
 
         <!-- CALCULATOR TAB -->
         <div id="tab-calculator" class="space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
                 <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3">⚙️ Risk & Lot Size Calculator</h2>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Total Capital ($)</label>
@@ -65,107 +78,134 @@
                         <input type="number" id="sl-pips" value="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Pip Value (Standard Lot per Pip approx $10)</label>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Pip Value</label>
                         <input type="number" id="pip-value" value="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                 </div>
 
-                <!-- Visualizer Box -->
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/80 grid grid-cols-3 gap-2 text-center">
-                    <div>
-                        <span class="text-xs text-slate-400 block">Risk Amount</span>
-                        <span id="res-risk-amt" class="text-base font-bold text-red-400">$10.00</span>
-                    </div>
-                    <div>
-                        <span class="text-xs text-slate-400 block">Suggested Lot</span>
-                        <span id="res-lot" class="text-base font-bold text-emerald-400">0.05</span>
-                    </div>
-                    <div>
-                        <span class="text-xs text-slate-400 block">1:2 Target Profit</span>
-                        <span id="res-tp" class="text-base font-bold text-emerald-400">$20.00</span>
-                    </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center">
+                    <div><span class="text-xs text-slate-400 block">Risk Amount</span><span id="res-risk-amt" class="text-base font-bold text-red-400">$10.00</span></div>
+                    <div><span class="text-xs text-slate-400 block">Suggested Lot</span><span id="res-lot" class="text-base font-bold text-emerald-400">0.05</span></div>
+                    <div><span class="text-xs text-slate-400 block">1:2 Target</span><span id="res-tp" class="text-base font-bold text-emerald-400">$20.00</span></div>
                 </div>
 
-                <!-- Trade Setup & Lifecycle Control -->
                 <div class="space-y-3 pt-2">
-                    <label class="block text-xs font-semibold text-slate-400">Trade Management / Action</label>
+                    <label class="block text-xs font-semibold text-slate-400">Trade Management</label>
                     <div class="grid grid-cols-4 gap-2">
-                        <button onclick="setManagement('BE')" id="btn-be" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded-lg font-medium transition">Break-Even</button>
-                        <button onclick="setManagement('1:1')" id="btn-11" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded-lg font-medium transition">1 : 1</button>
-                        <button onclick="setManagement('1:2')" id="btn-12" class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium transition">1 : 2</button>
-                        <button onclick="setManagement('1:3')" id="btn-13" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded-lg font-medium transition">1 : 3</button>
+                        <button onclick="setManagement('BE')" id="btn-be" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">Break-Even</button>
+                        <button onclick="setManagement('1:1')" id="btn-11" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1 : 1</button>
+                        <button onclick="setManagement('1:2')" id="btn-12" class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium">1 : 2</button>
+                        <button onclick="setManagement('1:3')" id="btn-13" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1 : 3</button>
                     </div>
                 </div>
 
-                <!-- Psychology / Trade Note -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Trade Note / Psychology Tag</label>
-                    <input type="text" id="trade-note" placeholder="e.g. FOMO trade, Perfect support bounce, London breakout..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <input type="text" id="trade-note" placeholder="e.g. FOMO trade, Perfect setup..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
                 </div>
 
-                <!-- Win / Loss Action Buttons -->
                 <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button onclick="closeTrade('WIN')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-900/20">✅ Close as WIN</button>
-                    <button onclick="closeTrade('LOSS')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-900/20">❌ Close as LOSS</button>
+                    <button onclick="closeTrade('WIN')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">✅ Close as WIN</button>
+                    <button onclick="closeTrade('LOSS')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition">❌ Close as LOSS</button>
                 </div>
             </div>
         </div>
 
-        <!-- HISTORY & STATS TAB -->
+        <!-- HISTORY TAB -->
         <div id="tab-history" class="hidden space-y-6">
-            <!-- Performance Stats Box -->
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
                 <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3">📊 Performance Stats</h2>
                 <div class="grid grid-cols-3 gap-4 text-center">
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span class="text-xs text-slate-400 block">Total Trades</span>
-                        <span id="stat-total" class="text-xl font-bold text-white">0</span>
-                    </div>
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span class="text-xs text-slate-400 block">Win Rate</span>
-                        <span id="stat-winrate" class="text-xl font-bold text-emerald-400">0%</span>
-                    </div>
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span class="text-xs text-slate-400 block">Win / Loss</span>
-                        <span id="stat-wl-count" class="text-xl font-bold text-slate-200">0 / 0</span>
-                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-xs text-slate-400 block">Total</span><span id="stat-total" class="text-xl font-bold text-white">0</span></div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-xs text-slate-400 block">Win Rate</span><span id="stat-winrate" class="text-xl font-bold text-emerald-400">0%</span></div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-xs text-slate-400 block">W / L</span><span id="stat-wl-count" class="text-xl font-bold text-slate-200">0 / 0</span></div>
                 </div>
             </div>
-
-            <!-- History List -->
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
                 <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3">📜 Permanent Trade History</h2>
-                <div id="history-list" class="space-y-3">
-                    <p class="text-sm text-slate-500 text-center py-4">Koi trade history available nahi hai.</p>
-                </div>
+                <div id="history-list" class="space-y-3"><p class="text-sm text-slate-500 text-center py-4">Koi history nahi hai.</p></div>
             </div>
         </div>
-
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">
-        Trading Sheikh &copy; 2026 | Built for Professional Risk Control
-    </footer>
+    <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
-    <!-- JavaScript Logic -->
     <script>
-        let capital = 1000;
-        let todayPnl = 0;
-        let activeManagement = '1:2';
-        let tradesHistory = [];
+        // --- DEVICE BINDING & LICENSE SYSTEM ---
+        // Aap yahan apne valid keys define kar sakte hain jo aap apne doston/buyers ko denge
+        const validLicenses = ["SHEIKH-1111-VIP", "SHEIKH-2222-VIP", "SHEIKH-3333-VIP", "ALI-9999-PRO"];
+
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('ts_device_id');
+            if (!deviceId) {
+                deviceId = 'DEV-' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+                localStorage.setItem('ts_device_id', deviceId);
+            }
+            return deviceId;
+        }
+
+        function checkLicense() {
+            let savedKey = localStorage.getItem('ts_license_key');
+            let boundDevice = localStorage.getItem('ts_bound_device');
+            let currentDev = getDeviceId();
+
+            if (!savedKey || !validLicenses.includes(savedKey) || boundDevice !== currentDev) {
+                document.getElementById('license-screen').classList.remove('hidden');
+            } else {
+                document.getElementById('license-screen').classList.add('hidden');
+            }
+        }
+
+        function verifyLicense() {
+            let inputKey = document.getElementById('license-input').value.trim().toUpperCase();
+            if (validLicenses.includes(inputKey)) {
+                localStorage.setItem('ts_license_key', inputKey);
+                localStorage.setItem('ts_bound_device', getDeviceId());
+                document.getElementById('license-screen').classList.add('hidden');
+                alert('License Successfully Activated on this Device!');
+            } else {
+                document.getElementById('license-error').classList.remove('hidden');
+            }
+        }
+
+        window.onload = function() {
+            checkLicense();
+            calculateLot();
+        };
+
+        // --- PWA INSTALL PROMPT ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-btn').classList.remove('hidden');
+        });
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                let { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('install-btn').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // --- APP CORE LOGIC ---
+        let capital = 1000, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
 
         function switchTab(tab) {
             if(tab === 'calculator') {
                 document.getElementById('tab-calculator').classList.remove('hidden');
                 document.getElementById('tab-history').classList.add('hidden');
-                document.getElementById('nav-calc').className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white transition';
-                document.getElementById('nav-hist').className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+                document.getElementById('nav-calc').className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition';
+                document.getElementById('nav-hist').className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
             } else {
                 document.getElementById('tab-calculator').classList.add('hidden');
                 document.getElementById('tab-history').classList.remove('hidden');
-                document.getElementById('nav-hist').className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white transition';
-                document.getElementById('nav-calc').className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+                document.getElementById('nav-hist').className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition';
+                document.getElementById('nav-calc').className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
                 updateStats();
             }
         }
@@ -174,11 +214,7 @@
             activeManagement = type;
             ['BE', '1:1', '1:2', '1:3'].forEach(t => {
                 let btn = document.getElementById('btn-' + t.toLowerCase().replace(':',''));
-                if(t === type) {
-                    btn.className = 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium transition';
-                } else {
-                    btn.className = 'bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded-lg font-medium transition';
-                }
+                btn.className = (t === type) ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-lg font-medium' : 'bg-slate-800 text-xs py-2 rounded-lg font-medium';
             });
             calculateLot();
         }
@@ -188,97 +224,64 @@
             let riskPct = parseFloat(document.getElementById('risk-pct').value) || 0;
             let slPips = parseFloat(document.getElementById('sl-pips').value) || 1;
             let pipValue = parseFloat(document.getElementById('pip-value').value) || 10;
-
             let riskAmount = (capital * riskPct) / 100;
-            let lotSize = riskAmount / (slPips * pipValue);
-            if(lotSize < 0.01) lotSize = 0.01;
-
+            let lotSize = Math.max(riskAmount / (slPips * pipValue), 0.01);
             let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
-            let targetProfit = riskAmount * rrMultiplier;
-
+            
             document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
             document.getElementById('res-risk-amt').innerText = '$' + riskAmount.toFixed(2);
             document.getElementById('res-lot').innerText = lotSize.toFixed(2);
-            document.getElementById('res-tp').innerText = '$' + targetProfit.toFixed(2);
+            document.getElementById('res-tp').innerText = '$' + (riskAmount * rrMultiplier).toFixed(2);
         }
 
         function closeTrade(result) {
-            let riskPct = parseFloat(document.getElementById('risk-pct').value) || 1;
-            let riskAmount = (capital * riskPct) / 100;
+            let riskAmount = (capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
             let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
-            let tradeAmount = result === 'WIN' ? riskAmount * (activeManagement === 'BE' ? 0 : rrMultiplier) : -riskAmount;
+            let tradeAmount = result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount;
             
-            let note = document.getElementById('trade-note').value || 'No note added';
-
             capital += tradeAmount;
             todayPnl += tradeAmount;
-
             document.getElementById('capital').value = capital.toFixed(2);
             document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
             
-            let pnlElement = document.getElementById('display-pnl');
-            pnlElement.innerText = (todayPnl >= 0 ? '+$' : '-$') + Math.abs(todayPnl).toFixed(2);
-            pnlElement.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
+            let pnlEl = document.getElementById('display-pnl');
+            pnlEl.innerText = (todayPnl >= 0 ? '+$' : '-$') + Math.abs(todayPnl).toFixed(2);
+            pnlEl.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
 
-            // Drawdown check (if today loss > 5% of original capital)
-            if(todayPnl < -(capital * 0.05)) {
-                document.getElementById('drawdown-alert').classList.remove('hidden');
-            }
+            if(todayPnl < -(capital * 0.05)) document.getElementById('drawdown-alert').classList.remove('hidden');
 
             tradesHistory.unshift({
-                result: result,
-                amount: tradeAmount,
-                management: activeManagement,
-                note: note,
+                result, amount: tradeAmount, management: activeManagement,
+                note: document.getElementById('trade-note').value || 'No note',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
             document.getElementById('trade-note').value = '';
             calculateLot();
-            alert('Trade logged successfully as ' + result + '!');
+            alert('Trade logged as ' + result);
         }
 
         function updateStats() {
             let total = tradesHistory.length;
-            if(total === 0) {
-                document.getElementById('stat-total').innerText = '0';
-                document.getElementById('stat-winrate').innerText = '0%';
-                document.getElementById('stat-wl-count').innerText = '0 / 0';
-                document.getElementById('history-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Koi trade history available nahi hai.</p>';
-                return;
-            }
-
+            if(total === 0) return;
             let wins = tradesHistory.filter(t => t.result === 'WIN').length;
-            let losses = tradesHistory.filter(t => t.result === 'LOSS').length;
-            let winRate = ((wins / total) * 100).toFixed(1);
-
             document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-winrate').innerText = winRate + '%';
-            document.getElementById('stat-wl-count').innerText = wins + ' / ' + losses;
+            document.getElementById('stat-winrate').innerText = ((wins / total) * 100).toFixed(1) + '%';
+            document.getElementById('stat-wl-count').innerText = wins + ' / ' + (total - wins);
 
             let html = '';
             tradesHistory.forEach(t => {
-                let badgeColor = t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20';
-                let amtSign = t.amount >= 0 ? '+' : '';
-                html += `
-                    bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-sm
+                html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-sm">
                     <div>
-                        <div class="flex items-center space-x-2">
-                            <span class="px-2 py-0.5 rounded text-xs font-bold border ${badgeColor}">${t.result}</span>
-                            <span class="text-slate-300 font-medium">Mode: ${t.management}</span>
-                            <span class="text-xs text-slate-500">${t.time}</span>
-                        </div>
-                        <p class="text-xs text-slate-400 mt-1 italic">Note: "${t.note}"</p>
+                        <span class="px-2 py-0.5 rounded text-xs font-bold ${t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">${t.result}</span>
+                        <span class="text-slate-300 ml-2">Mode: ${t.management}</span>
+                        <p class="text-xs text-slate-400 mt-1 italic">"${t.note}"</p>
                     </div>
-                    <div class="text-right font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">
-                        ${amtSign}$${t.amount.toFixed(2)}
-                    </div>
+                    <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
                 </div>`;
             });
             document.getElementById('history-list').innerHTML = html;
         }
-
-        calculateLot();
     </script>
 </body>
 </html>
