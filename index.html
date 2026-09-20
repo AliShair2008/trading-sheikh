@@ -84,6 +84,13 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Trade Direction (Buy / Sell)</label>
+                        <select id="trade-direction" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="BUY" selected>🟢 BUY (Long)</option>
+                            <option value="SELL">🔴 SELL (Short)</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Total Capital ($)</label>
                         <input type="number" id="capital" value="177" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="updateCapitalFromInput()">
                     </div>
@@ -248,7 +255,6 @@
         }
 
         async function loadUserData() {
-            // Pehle local storage se foran data load karein taaki instant display ho jaye
             let localCap = localStorage.getItem('ts_local_capital');
             let localPnl = localStorage.getItem('ts_local_pnl');
             let localHist = localStorage.getItem('ts_local_history');
@@ -263,20 +269,17 @@
             updateDisplay();
             calculateLot();
 
-            // Phir Firebase se latest sync karein agar internet available ho
             if (!currentKey) return;
             try {
                 let docRef = db.collection("users").doc(currentKey);
                 let doc = await docRef.get();
                 if (doc.exists) {
                     let data = doc.data();
-                    // Agar firebase par data maujood hai to usko tarjeeh dein (lekin sirf tab jab local se naya ho ya pehli baar ho)
                     if(data.capital !== undefined && data.capital !== 177) {
                         capital = data.capital;
                         todayPnl = data.todayPnl || 0;
                         tradesHistory = data.tradesHistory || [];
                         
-                        // Local storage ko bhi update kardein
                         localStorage.setItem('ts_local_capital', capital);
                         localStorage.setItem('ts_local_pnl', todayPnl);
                         localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
@@ -293,7 +296,6 @@
         }
 
         async function saveUserData() {
-            // Local storage me foran save karein taaki refresh par data na jaye
             localStorage.setItem('ts_local_capital', capital);
             localStorage.setItem('ts_local_pnl', todayPnl);
             localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
@@ -478,9 +480,10 @@
             playSound(result === 'WIN' ? 'win' : 'loss');
 
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
+            let direction = document.getElementById('trade-direction').value;
 
             tradesHistory.unshift({
-                result, amount: tradeAmount, management: activeManagement, asset: assetName,
+                result, amount: tradeAmount, management: activeManagement, asset: assetName, direction,
                 note: document.getElementById('trade-note').value || 'No note',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
@@ -513,9 +516,9 @@
                 alert("Export karne ke liye koi history nahi hai!");
                 return;
             }
-            let csvContent = "data:text/csv;charset=utf-8,Result,Asset,Mode,Amount,Time,Note\n";
+            let csvContent = "data:text/csv;charset=utf-8,Result,Direction,Asset,Mode,Amount,Time,Note\n";
             tradesHistory.forEach(t => {
-                let row = [t.result, `"${t.asset}"`, t.management, t.amount.toFixed(2), t.time, `"${t.note}"`].join(",");
+                let row = [t.result, t.direction || 'BUY', `"${t.asset}"`, t.management, t.amount.toFixed(2), t.time, `"${t.note}"`].join(",");
                 csvContent += row + "\n";
             });
             let encodedUri = encodeURI(csvContent);
@@ -543,10 +546,13 @@
 
             let html = '';
             tradesHistory.forEach(t => {
+                let dir = t.direction || 'BUY';
+                let dirBadge = dir === 'BUY' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400';
                 html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-sm">
                     <div>
                         <div class="flex items-center space-x-2">
                             <span class="px-2 py-0.5 rounded text-xs font-bold ${t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">${t.result}</span>
+                            <span class="px-2 py-0.5 rounded text-xs font-bold ${dirBadge}">${dir}</span>
                             <span class="text-xs text-emerald-300 font-semibold bg-emerald-950/40 px-2 py-0.5 rounded">${t.asset}</span>
                         </div>
                         <span class="text-slate-300 text-xs mt-1 block">Mode: ${t.management} | Time: ${t.time}</span>
