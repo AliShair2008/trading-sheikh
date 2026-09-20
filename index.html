@@ -46,7 +46,7 @@
     <!-- Main Container -->
     <main class="flex-grow max-w-4xl w-full mx-auto p-4 space-y-6">
         <div id="drawdown-alert" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm font-medium flex items-center justify-between">
-            <span>⚠️ <strong>Warning:</strong> Aaj ka loss limit se barh gaya hai! Mazeed trade mat lo.</span>
+            <span>⚠️ <strong>Warning:</strong> Lagataar 3 trades loss ho chuki hain! Market se break lein.</span>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -275,7 +275,6 @@
 
             if(lotSize < 0.01) lotSize = 0.01;
 
-            // Adjust lot if commission affects total risk
             if(commPerLot > 0) {
                 let totalComm = commPerLot * lotSize;
                 let adjustedRisk = riskAmount - totalComm;
@@ -312,8 +311,6 @@
             pnlEl.innerText = (todayPnl >= 0 ? '+$' : '-$') + Math.abs(todayPnl).toFixed(2);
             pnlEl.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
 
-            if(todayPnl < -(capital * 0.05)) document.getElementById('drawdown-alert').classList.remove('hidden');
-
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
 
             tradesHistory.unshift({
@@ -321,6 +318,11 @@
                 note: document.getElementById('trade-note').value || 'No note',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
+
+            // Check if last 3 trades are losses
+            if(tradesHistory.length >= 3 && tradesHistory[0].result === 'LOSS' && tradesHistory[1].result === 'LOSS' && tradesHistory[2].result === 'LOSS') {
+                document.getElementById('drawdown-alert').classList.remove('hidden');
+            }
 
             document.getElementById('trade-note').value = '';
             document.getElementById('custom-pnl').value = '';
@@ -331,6 +333,7 @@
         function clearHistory() {
             if(confirm('Kya aap saari history clear karna chahte hain?')) {
                 tradesHistory = [];
+                document.getElementById('drawdown-alert').classList.add('hidden');
                 updateStats();
                 alert('History cleared successfully!');
             }
