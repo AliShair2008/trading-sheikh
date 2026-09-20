@@ -23,8 +23,8 @@
                 <p class="text-xs text-slate-400">Apni secure license key enter karein.</p>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">License Key</label>
-                <input type="text" id="license-input" placeholder="e.g. SHK-XXXX-XXXX" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 uppercase">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">License Key / Document ID</label>
+                <input type="text" id="license-input" placeholder="e.g. TRADING-SHEIKH-001" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500">
             </div>
             <button onclick="verifyLicense()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">Activate App</button>
             <p id="license-error" class="text-xs text-red-400 text-center hidden">Invalid key ya yeh key pehle se kisi aur device par active hai!</p>
@@ -153,7 +153,7 @@
     <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
     <script>
-        // Aap ki asli Firebase Configuration jo aapne abhi li hai[cite: 2]
+        // Aap ki asli Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBV8CKLOhAJz0bukTmrtAQVMnFT3nvMMc",
             authDomain: "tradingsheikhapp.firebaseapp.com",
@@ -190,7 +190,7 @@
         }
 
         async function verifyLicense() {
-            let inputKey = document.getElementById('license-input').value.trim().toUpperCase();
+            let inputKey = document.getElementById('license-input').value.trim();
             if (!inputKey) {
                 alert('Pehle license key likhein!');
                 return;
@@ -201,13 +201,13 @@
             let devId = getDeviceId();
 
             if (!doc.exists) {
-                // Agar key Firestore mein pehle se nahi hai, toh hum usko nayi valid key ke tor par bana dete hain ya error de sakte hain
                 document.getElementById('license-error').innerText = "Yeh license key ghalat (Invalid) hai!";
                 document.getElementById('license-error').classList.remove('hidden');
                 return;
             }
 
             let data = doc.data();
+            // Agar pehle se kisi aur device ki ID lagi hai aur wo current device nahi hai
             if (data.deviceId && data.deviceId !== devId) {
                 document.getElementById('license-error').innerText = "Yeh key pehle se kisi aur device par active hai!";
                 document.getElementById('license-error').classList.remove('hidden');
@@ -425,6 +425,7 @@
             document.getElementById('stat-wl-count').innerText = wins + ' / ' + (total - wins);
 
             let html = '';
+            tradesHistory.tradesHistory?.forEach?.(t => {}); // safety
             tradesHistory.forEach(t => {
                 html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-sm">
                     <div>
@@ -432,7 +433,7 @@
                             <span class="px-2 py-0.5 rounded text-xs font-bold ${t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">${t.result}</span>
                             <span class="text-xs text-emerald-300 font-semibold bg-emerald-950/40 px-2 py-0.5 rounded">${t.asset}</span>
                         </div>
-                        <span class="text-slate-300 text-xs mt-1 block">Mode: ${t.management} | Time: ${t.time}</span>
+                        <span class="text-slate-300 text-xs mt-1 block">Mode: `${t.management}` | Time: ${t.time}</span>
                         <p class="text-xs text-slate-400 mt-1 italic">"${t.note}"</p>
                     </div>
                     <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
