@@ -14,8 +14,8 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-    <!-- LICENSE LOCK SCREEN -->
-    <div id="license-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4 hidden">
+    <!-- LICENSE LOCK SCREEN (Ensure 'hidden' is removed by default, JS will control it) -->
+    <div id="license-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="text-center space-y-1">
                 <div class="bg-emerald-500 text-slate-950 font-bold w-12 h-12 mx-auto rounded-xl flex items-center justify-center text-xl">TS</div>
@@ -153,7 +153,6 @@
     <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
     <script>
-        // Aap ki asli Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBV8CKLOhAJz0bukTmrtAQVMnFT3nvMMc",
             authDomain: "tradingsheikhapp.firebaseapp.com",
@@ -181,6 +180,7 @@
         function checkLicense() {
             let savedKey = localStorage.getItem('ts_active_license');
             if (!savedKey) {
+                // Ensure lock screen is visible if no key exists
                 document.getElementById('license-screen').classList.remove('hidden');
             } else {
                 currentKey = savedKey;
@@ -207,14 +207,12 @@
             }
 
             let data = doc.data();
-            // Agar pehle se kisi aur device ki ID lagi hai aur wo current device nahi hai
             if (data.deviceId && data.deviceId !== devId) {
                 document.getElementById('license-error').innerText = "Yeh key pehle se kisi aur device par active hai!";
                 document.getElementById('license-error').classList.remove('hidden');
                 return;
             }
 
-            // Bind key to this device
             await docRef.set({ deviceId: devId }, { merge: true });
             localStorage.setItem('ts_active_license', inputKey);
             currentKey = inputKey;
@@ -425,7 +423,6 @@
             document.getElementById('stat-wl-count').innerText = wins + ' / ' + (total - wins);
 
             let html = '';
-            tradesHistory.tradesHistory?.forEach?.(t => {}); // safety
             tradesHistory.forEach(t => {
                 html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-sm">
                     <div>
@@ -433,7 +430,7 @@
                             <span class="px-2 py-0.5 rounded text-xs font-bold ${t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">${t.result}</span>
                             <span class="text-xs text-emerald-300 font-semibold bg-emerald-950/40 px-2 py-0.5 rounded">${t.asset}</span>
                         </div>
-                        <span class="text-slate-300 text-xs mt-1 block">Mode: `${t.management}` | Time: ${t.time}</span>
+                        <span class="text-slate-300 text-xs mt-1 block">Mode: ${t.management} | Time: ${t.time}</span>
                         <p class="text-xs text-slate-400 mt-1 italic">"${t.note}"</p>
                     </div>
                     <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
