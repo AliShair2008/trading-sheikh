@@ -248,32 +248,66 @@
         }
 
         async function loadUserData() {
-            if (!currentKey) return;
-            let docRef = db.collection("users").doc(currentKey);
-            let doc = await docRef.get();
-            if (doc.exists) {
-                let data = doc.data();
-                capital = data.capital || 177;
-                todayPnl = data.todayPnl || 0;
-                tradesHistory = data.tradesHistory || [];
-            } else {
-                capital = 177;
-                todayPnl = 0;
-                tradesHistory = [];
-                await saveUserData();
+            // Pehle local storage se foran data load karein taaki instant display ho jaye
+            let localCap = localStorage.getItem('ts_local_capital');
+            let localPnl = localStorage.getItem('ts_local_pnl');
+            let localHist = localStorage.getItem('ts_local_history');
+
+            if (localCap !== null) capital = parseFloat(localCap);
+            if (localPnl !== null) todayPnl = parseFloat(localPnl);
+            if (localHist !== null) {
+                try { tradesHistory = JSON.parse(localHist); } catch(e) {}
             }
+
             document.getElementById('capital').value = capital;
             updateDisplay();
             calculateLot();
+
+            // Phir Firebase se latest sync karein agar internet available ho
+            if (!currentKey) return;
+            try {
+                let docRef = db.collection("users").doc(currentKey);
+                let doc = await docRef.get();
+                if (doc.exists) {
+                    let data = doc.data();
+                    // Agar firebase par data maujood hai to usko tarjeeh dein (lekin sirf tab jab local se naya ho ya pehli baar ho)
+                    if(data.capital !== undefined && data.capital !== 177) {
+                        capital = data.capital;
+                        todayPnl = data.todayPnl || 0;
+                        tradesHistory = data.tradesHistory || [];
+                        
+                        // Local storage ko bhi update kardein
+                        localStorage.setItem('ts_local_capital', capital);
+                        localStorage.setItem('ts_local_pnl', todayPnl);
+                        localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
+                    }
+                } else {
+                    await saveUserData();
+                }
+                document.getElementById('capital').value = capital;
+                updateDisplay();
+                calculateLot();
+            } catch(err) {
+                console.log("Offline mode: Using local storage cache.");
+            }
         }
 
         async function saveUserData() {
+            // Local storage me foran save karein taaki refresh par data na jaye
+            localStorage.setItem('ts_local_capital', capital);
+            localStorage.setItem('ts_local_pnl', todayPnl);
+            localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
+
             if (!currentKey) return;
-            await db.collection("users").doc(currentKey).set({
-                capital,
-                todayPnl,
-                tradesHistory
-            }, { merge: true });
+            try {
+                await db.collection("users").doc(currentKey).set({
+                    capital,
+                    todayPnl,
+                    tradesHistory
+                }, { merge: true });
+            } catch(e) {
+                console.log("Firebase sync failed, saved locally.");
+            }
         }
 
         window.onload = function() {
@@ -350,7 +384,7 @@
                 capital = val;
                 updateDisplay();
                 calculateLot();
-                saveUserData(); // Automatic save on typing/changing capital
+                saveUserData();
             }
         }
 
@@ -460,7 +494,6 @@
             calculateLot();
             
             await saveUserData();
-            alert('Trade logged and saved to cloud as ' + result);
         }
 
         async function clearHistory() {
