@@ -11,7 +11,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-    <!-- LICENSE LOCK SCREEN (Hidden by default if already licensed) -->
+    <!-- LICENSE LOCK SCREEN -->
     <div id="license-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="text-center space-y-1">
@@ -36,7 +36,7 @@
                 <h1 class="text-xl font-bold tracking-tight text-white">Trading Sheikh</h1>
             </div>
             <div class="flex items-center space-x-2">
-                <button id="install-btn" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition">📱 Install App</button>
+                <button id="install-btn" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition">📱 Install</button>
                 <button onclick="switchTab('calculator')" id="nav-calc" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition">Calculator</button>
                 <button onclick="switchTab('history')" id="nav-hist" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">History</button>
             </div>
@@ -78,7 +78,7 @@
                         <input type="number" id="sl-pips" value="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Pip Value</label>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Pip Value per Standard Lot ($)</label>
                         <input type="number" id="pip-value" value="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="space-y-3 pt-2">
-                    <label class="block text-xs font-semibold text-slate-400">Trade Management</label>
+                    <label class="block text-xs font-semibold text-slate-400">Trade Management / Target Mode</label>
                     <div class="grid grid-cols-4 gap-2">
                         <button onclick="setManagement('BE')" id="btn-be" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">Break-Even</button>
                         <button onclick="setManagement('1:1')" id="btn-11" class="bg-slate-800 text-xs py-2 rounded-lg font-medium">1 : 1</button>
@@ -104,6 +104,12 @@
                     <input type="text" id="trade-note" placeholder="e.g. FOMO trade, Perfect setup..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
                 </div>
 
+                <!-- Custom PnL Input Option -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Custom Profit/Loss ($) Optional [Agar manual dollar dalna ho]</label>
+                    <input type="number" id="custom-pnl" placeholder="e.g. 15 or -10" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 pt-2">
                     <button onclick="closeTrade('WIN')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">✅ Close as WIN</button>
                     <button onclick="closeTrade('LOSS')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition">❌ Close as LOSS</button>
@@ -114,7 +120,10 @@
         <!-- HISTORY TAB -->
         <div id="tab-history" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
-                <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3">📊 Performance Stats</h2>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-bold text-white">📊 Performance Stats</h2>
+                    <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/30 transition">🗑️ Clear History</button>
+                </div>
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-xs text-slate-400 block">Total</span><span id="stat-total" class="text-xl font-bold text-white">0</span></div>
                     <div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-xs text-slate-400 block">Win Rate</span><span id="stat-winrate" class="text-xl font-bold text-emerald-400">0%</span></div>
@@ -131,8 +140,6 @@
     <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
     <script>
-        // --- DEVICE BINDING & LICENSE SYSTEM ---
-        // Aap yahan apne valid keys define kar sakte hain jo aap apne doston/buyers ko denge
         const validLicenses = ["SHEIKH-1111-VIP", "SHEIKH-2222-VIP", "SHEIKH-3333-VIP", "ALI-9999-PRO"];
 
         function getDeviceId() {
@@ -162,7 +169,7 @@
                 localStorage.setItem('ts_license_key', inputKey);
                 localStorage.setItem('ts_bound_device', getDeviceId());
                 document.getElementById('license-screen').classList.add('hidden');
-                alert('License Successfully Activated on this Device!');
+                alert('License Successfully Activated!');
             } else {
                 document.getElementById('license-error').classList.remove('hidden');
             }
@@ -173,7 +180,6 @@
             calculateLot();
         };
 
-        // --- PWA INSTALL PROMPT ---
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -185,14 +191,11 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 let { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('install-btn').classList.add('hidden');
-                }
+                if (outcome === 'accepted') document.getElementById('install-btn').classList.add('hidden');
                 deferredPrompt = null;
             }
         });
 
-        // --- APP CORE LOGIC ---
         let capital = 1000, todayPnl = 0, activeManagement = '1:2', tradesHistory = [];
 
         function switchTab(tab) {
@@ -224,8 +227,11 @@
             let riskPct = parseFloat(document.getElementById('risk-pct').value) || 0;
             let slPips = parseFloat(document.getElementById('sl-pips').value) || 1;
             let pipValue = parseFloat(document.getElementById('pip-value').value) || 10;
+            
             let riskAmount = (capital * riskPct) / 100;
-            let lotSize = Math.max(riskAmount / (slPips * pipValue), 0.01);
+            let lotSize = riskAmount / (slPips * pipValue);
+            if(lotSize < 0.01) lotSize = 0.01;
+
             let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
             
             document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
@@ -237,7 +243,9 @@
         function closeTrade(result) {
             let riskAmount = (capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
             let rrMultiplier = activeManagement === 'BE' ? 0 : (activeManagement === '1:1' ? 1 : (activeManagement === '1:2' ? 2 : 3));
-            let tradeAmount = result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount;
+            
+            let customVal = parseFloat(document.getElementById('custom-pnl').value);
+            let tradeAmount = isNaN(customVal) ? (result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount) : (result === 'WIN' ? Math.abs(customVal) : -Math.abs(customVal));
             
             capital += tradeAmount;
             todayPnl += tradeAmount;
@@ -257,13 +265,28 @@
             });
 
             document.getElementById('trade-note').value = '';
+            document.getElementById('custom-pnl').value = '';
             calculateLot();
-            alert('Trade logged as ' + result);
+            alert('Trade logged successfully as ' + result);
+        }
+
+        function clearHistory() {
+            if(confirm('Kya aap saari history clear karna chahte hain?')) {
+                tradesHistory = [];
+                updateStats();
+                alert('History cleared successfully!');
+            }
         }
 
         function updateStats() {
             let total = tradesHistory.length;
-            if(total === 0) return;
+            if(total === 0) {
+                document.getElementById('stat-total').innerText = '0';
+                document.getElementById('stat-winrate').innerText = '0%';
+                document.getElementById('stat-wl-count').innerText = '0 / 0';
+                document.getElementById('history-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Koi history nahi hai.</p>';
+                return;
+            }
             let wins = tradesHistory.filter(t => t.result === 'WIN').length;
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-winrate').innerText = ((wins / total) * 100).toFixed(1) + '%';
@@ -275,6 +298,7 @@
                     <div>
                         <span class="px-2 py-0.5 rounded text-xs font-bold ${t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">${t.result}</span>
                         <span class="text-slate-300 ml-2">Mode: ${t.management}</span>
+                        <span class="text-xs text-slate-500 ml-2">${t.time}</span>
                         <p class="text-xs text-slate-400 mt-1 italic">"${t.note}"</p>
                     </div>
                     <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
