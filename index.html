@@ -24,7 +24,7 @@
                 <input type="text" id="license-input" placeholder="e.g. SHEIKH-XXXX-YYYY" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 uppercase">
             </div>
             <button onclick="verifyLicense()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition">Activate App</button>
-            <p id="license-error" class="text-xs text-red-400 text-center hidden">Invalid key ya yeh key kisi aur device par active hai!</p>
+            <p id="license-error" class="text-xs text-red-400 text-center hidden">Invalid key! Baraye meharbani apni sahi key enter karein.</p>
         </div>
     </div>
 
@@ -150,7 +150,7 @@
     <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
     <script>
-        const validLicenses = ["SHEIKH-1111-VIP", "SHEIKH-2222-VIP", "SHEIKH-3333-VIP", "ALI-9999-PRO"];
+        const validLicenses = ["SHEIKH-1111-VIP", "SHEIKH-2222-VIP", "SHEIKH-3333-VIP", "ALI-9999-PRO", "USER-5555-PRO"];
 
         function getDeviceId() {
             let deviceId = localStorage.getItem('ts_device_id');
@@ -180,6 +180,7 @@
                 localStorage.setItem('ts_bound_device', getDeviceId());
                 document.getElementById('license-screen').classList.add('hidden');
                 alert('License Successfully Activated!');
+                calculateLot();
             } else {
                 document.getElementById('license-error').classList.remove('hidden');
             }
@@ -319,7 +320,6 @@
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
-            // Check if last 3 trades are losses
             if(tradesHistory.length >= 3 && tradesHistory[0].result === 'LOSS' && tradesHistory[1].result === 'LOSS' && tradesHistory[2].result === 'LOSS') {
                 document.getElementById('drawdown-alert').classList.remove('hidden');
             }
