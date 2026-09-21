@@ -84,6 +84,13 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Account Type</label>
+                        <select id="account-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" onchange="calculateLot()">
+                            <option value="standard" selected>Standard Account</option>
+                            <option value="cent">Cent Account (USC)</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Trade Direction (Buy / Sell)</label>
                         <select id="trade-direction" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" onchange="saveSettingsLocally()">
                             <option value="BUY" selected>🟢 BUY (Long)</option>
@@ -262,6 +269,7 @@
 
         async function loadUserData() {
             let savedAsset = localStorage.getItem('ts_setting_asset');
+            let savedAccType = localStorage.getItem('ts_setting_acc_type');
             let savedDir = localStorage.getItem('ts_setting_dir');
             let savedRisk = localStorage.getItem('ts_setting_risk');
             let savedSl = localStorage.getItem('ts_setting_sl');
@@ -269,6 +277,7 @@
             let savedMgmt = localStorage.getItem('ts_setting_mgmt');
 
             if(savedAsset) document.getElementById('asset-type').value = savedAsset;
+            if(savedAccType) document.getElementById('account-type').value = savedAccType;
             if(savedDir) document.getElementById('trade-direction').value = savedDir;
             if(savedRisk) document.getElementById('risk-pct').value = savedRisk;
             if(savedSl) document.getElementById('sl-pips').value = savedSl;
@@ -321,6 +330,7 @@
 
         function saveSettingsLocally() {
             localStorage.setItem('ts_setting_asset', document.getElementById('asset-type').value);
+            localStorage.setItem('ts_setting_acc_type', document.getElementById('account-type').value);
             localStorage.setItem('ts_setting_dir', document.getElementById('trade-direction').value);
             localStorage.setItem('ts_setting_risk', document.getElementById('risk-pct').value);
             localStorage.setItem('ts_setting_sl', document.getElementById('sl-pips').value);
@@ -444,6 +454,7 @@
             let riskPct = parseFloat(document.getElementById('risk-pct').value) || 0;
             let slValue = parseFloat(document.getElementById('sl-pips').value) || 1;
             let asset = document.getElementById('asset-type').value;
+            let accType = document.getElementById('account-type').value;
             let commPerLot = parseFloat(document.getElementById('broker-comm').value) || 0;
             
             let riskAmount = (capital * riskPct) / 100;
@@ -459,6 +470,10 @@
                 lotSize = riskAmount / (slValue * 10);
             }
 
+            if(accType === 'cent') {
+                lotSize = lotSize * 100;
+            }
+
             if(lotSize < 0.01) lotSize = 0.01;
 
             if(commPerLot > 0) {
@@ -469,6 +484,8 @@
                     else if(asset === 'nasdaq') lotSize = adjustedRisk / (slValue * 2.0);
                     else if(asset === 'btc') lotSize = adjustedRisk / (slValue * 1.0);
                     else lotSize = adjustedRisk / (slValue * 10);
+                    
+                    if(accType === 'cent') lotSize = lotSize * 100;
                     if(lotSize < 0.01) lotSize = 0.01;
                 }
             }
@@ -537,10 +554,11 @@
             playSound(result === 'WIN' ? 'win' : 'loss');
 
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
+            let accType = document.getElementById('account-type').value.toUpperCase();
             let direction = document.getElementById('trade-direction').value;
 
             tradesHistory.unshift({
-                result, amount: tradeAmount, management: activeManagement, asset: assetName, direction,
+                result, amount: tradeAmount, management: activeManagement, asset: assetName + ` (${accType})`, direction,
                 note: document.getElementById('trade-note').value || 'No note',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
