@@ -214,7 +214,7 @@
                     <h2 class="text-lg font-bold text-white">📊 Performance Stats</h2>
                     <div class="space-x-2">
                         <button onclick="exportHistoryCSV()" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-blue-500/30 transition">📥 Export CSV</button>
-                        <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/30 transition">🗑️ Clear</button>
+                        <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/30 transition">🗑️ Clear All</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 text-center">
@@ -570,7 +570,6 @@
             let bookLot = (mt5TradableLot * partialPct) / 100;
             let holdLot = mt5TradableLot - bookLot;
             
-            // Format lots nicely based on account type / size
             let bookLotStr = bookLot < 0.01 ? bookLot.toFixed(4) : bookLot.toFixed(2);
             let holdLotStr = holdLot < 0.01 ? holdLot.toFixed(4) : holdLot.toFixed(2);
 
@@ -580,7 +579,6 @@
             document.getElementById('res-mt5-lot').innerText = '(' + mt5TradableLot.toFixed(2) + ')';
             document.getElementById('res-tp').innerText = '$' + targetReturn.toFixed(2);
             
-            // Updated to show both PnL and Lot sizes clearly
             document.getElementById('res-partial-info').innerHTML = `Book (${partialPct}%): <strong>$${bookAmount.toFixed(2)}</strong> (${bookLotStr} Lot)<br>Hold (${remainingPct}%): <strong>$${holdAmount.toFixed(2)}</strong> (${holdLotStr} Lot)`;
 
             saveSettingsLocally();
@@ -777,6 +775,20 @@
             updateStats();
         }
 
+        async function deleteSingleHistory(index) {
+            if(confirm("Kya aap is single trade record ko delete karna chahte hain?")) {
+                let removedTrade = tradesHistory[index];
+                
+                // Optional: Capital aur PnL mein se is trade ka asar reverse karna ho toh kar sakte hain, 
+                // lekin filhal hum sirf history entry aur stats ko update kar rahe hain.
+                tradesHistory.splice(index, 1);
+                
+                updateStats();
+                await saveUserData();
+                alert("Trade history item delete ho gaya!");
+            }
+        }
+
         async function clearHistory() {
             if(confirm('Kya aap saari history clear karna chahte hain?')) {
                 tradesHistory = [];
@@ -834,11 +846,11 @@
             document.getElementById('stat-wl-count').innerText = wins + ' / ' + (total - wins);
 
             let html = '';
-            tradesHistory.forEach(t => {
+            tradesHistory.forEach((t, index) => {
                 let dir = t.direction || 'BUY';
                 let dirBadge = dir === 'BUY' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400';
                 let isSpecial = t.result.includes('PARTIAL') || t.result.includes('REMAINING');
-                let resultBadgeColor = isSpecial ? 'bg-amber-500/10 text-amber-400' : (t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'box bg-red-500/10 text-red-400');
+                let resultBadgeColor = isSpecial ? 'bg-amber-500/10 text-amber-400' : (t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400');
                 let screenshotHtml = t.screenshot ? `<div class="mt-2"><img src="${t.screenshot}" onclick="openImageModal('${t.screenshot}')" class="w-20 h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 transition" title="Click to view full screenshot"></div>` : '';
                 
                 html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-start text-sm">
@@ -850,9 +862,12 @@
                         </div>
                         <span class="text-slate-300 text-xs mt-1 block">Mode: ${t.management} | Time: ${t.time}</span>
                         <p class="text-xs text-slate-400 mt-1 italic">"${t.note}"</p>
-                        ${screenshotLive = screenshotHtml}
+                        ${screenshotHtml}
                     </div>
-                    <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
+                    <div class="flex flex-col items-end space-y-2">
+                        <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
+                        <button onclick="deleteSingleHistory(${index})" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/20 transition">✕ Delete</button>
+                    </div>
                 </div>`;
             });
             document.getElementById('history-list').innerHTML = html;
