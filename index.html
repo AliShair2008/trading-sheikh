@@ -139,9 +139,15 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Trade Note / Psychology Tag</label>
-                    <input type="text" id="trade-note" placeholder="e.g. Gold Buy setup..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Trade Note / Psychology Tag</label>
+                        <input type="text" id="trade-note" placeholder="e.g. Gold Buy setup..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">📸 Trade / Backtest Screenshot</label>
+                        <input type="file" id="trade-screenshot" accept="image/*" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-400 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500">
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-2">
@@ -173,6 +179,14 @@
             </div>
         </div>
     </main>
+
+    <!-- FULLSCREEN IMAGE MODAL -->
+    <div id="image-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4" onclick="closeImageModal()">
+        <div class="relative max-w-3xl w-full">
+            <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white font-bold bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-sm">✕ Close</button>
+            <img id="modal-img" src="" class="w-full max-h-[80vh] object-contain rounded-xl border border-slate-800">
+        </div>
+    </div>
 
     <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-auto">Trading Sheikh &copy; 2026</footer>
 
@@ -452,8 +466,6 @@
             let riskAmount = (capital * riskPct) / 100;
             let rawLot = 0.01;
 
-            // MT5 Standard Account Pip/Point Value Calculation:
-            // Gold Standard: 1 standard lot = $10 per pip. Therefore, lot = Risk / (SL * 10)
             if(asset === 'gold') {
                 rawLot = riskAmount / (slValue * 10);
             } else if(asset === 'nasdaq') {
@@ -468,7 +480,6 @@
                 rawLot = rawLot * 100;
             }
 
-            // Minimum broker tradable limit constraint for bracket display
             let minTradableLot = accType === 'cent' ? 1.0 : 0.01;
             let mt5TradableLot = rawLot < minTradableLot ? minTradableLot : Math.round(rawLot * 100) / 100;
 
@@ -535,9 +546,25 @@
             let accType = document.getElementById('account-type').value.toUpperCase();
             let direction = document.getElementById('trade-direction').value;
 
+            let screenshotFile = document.getElementById('trade-screenshot').files[0];
+            
+            if (screenshotFile) {
+                let reader = new FileReader();
+                reader.onload = async function(e) {
+                    let base64Image = e.target.result;
+                    saveTradeRecord(result, tradeAmount, assetName, accType, direction, base64Image);
+                };
+                reader.readAsDataURL(screenshotFile);
+            } else {
+                saveTradeRecord(result, tradeAmount, assetName, accType, direction, null);
+            }
+        }
+
+        async function saveTradeRecord(result, tradeAmount, assetName, accType, direction, screenshot) {
             tradesHistory.unshift({
                 result, amount: tradeAmount, management: activeManagement, asset: assetName + ` (${accType})`, direction,
                 note: document.getElementById('trade-note').value || 'No note',
+                screenshot: screenshot || null,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
@@ -547,9 +574,11 @@
 
             document.getElementById('trade-note').value = '';
             document.getElementById('custom-pnl').value = '';
+            document.getElementById('trade-screenshot').value = '';
             calculateLot();
             
             await saveUserData();
+            updateStats();
         }
 
         async function clearHistory() {
@@ -583,6 +612,15 @@
             document.body.removeChild(link);
         }
 
+        function openImageModal(imgSrc) {
+            document.getElementById('modal-img').src = imgSrc;
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+        }
+
         function updateStats() {
             let total = tradesHistory.length;
             if(total === 0) {
@@ -601,7 +639,9 @@
             tradesHistory.forEach(t => {
                 let dir = t.direction || 'BUY';
                 let dirBadge = dir === 'BUY' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400';
-                html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-sm">
+                let screenshotHtml = t.screenshot ? `<div class="mt-2"><img src="${t.screenshot}" onclick="openImageModal('${t.screenshot}')" class="w-20 h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 transition" title="Click to view full screenshot"></div>` : '';
+                
+                html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-start text-sm">
                     <div>
                         <div class="flex items-center space-x-2">
                             <span class="px-2 py-0.5 rounded text-xs font-bold ${t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">${t.result}</span>
@@ -610,6 +650,7 @@
                         </div>
                         <span class="text-slate-300 text-xs mt-1 block">Mode: ${t.management} | Time: ${t.time}</span>
                         <p class="text-xs text-slate-400 mt-1 italic">"${t.note}"</p>
+                        ${screenshotHtml}
                     </div>
                     <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
                 </div>`;
