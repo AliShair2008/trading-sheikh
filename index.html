@@ -68,6 +68,21 @@
             </div>
         </div>
 
+        <!-- ACTIVE PARTIAL TRADE HOLDING PANEL (Dynamic) -->
+        <div id="active-holding-panel" class="hidden bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-amber-400 flex items-center space-x-1">
+                    <span>⚡ ACTIVE TRADE IN HOLD (Partial Done)</span>
+                </span>
+                <span id="holding-info-badge" class="text-[10px] bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded">60% Remaining</span>
+            </div>
+            <p id="holding-desc" class="text-xs text-slate-300">Aapne partial book kar liya hai. Baaki bachi hui trade hold par hai aur SL Break-Even par hai.</p>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="closeRemainingTrade('TP')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-2 rounded-xl transition text-xs">🎯 Remaining Hit TP</button>
+                <button onclick="closeRemainingTrade('BE')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 px-2 rounded-xl transition text-xs">🛡️ Hit BE / SL (0 Loss)</button>
+            </div>
+        </div>
+
         <!-- CALCULATOR TAB -->
         <div id="tab-calculator" class="space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
@@ -123,11 +138,26 @@
                     <div><span class="text-xs text-slate-400 block">Target Return</span><span id="res-tp" class="text-base font-bold text-emerald-400">$1.82</span></div>
                 </div>
 
-                <!-- PARTIAL BOOKING INFO BOX -->
-                <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <!-- CUSTOM PARTIAL BOOKING HELPER BOX -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-amber-400">📊 Partial Booking Helper (50% Split)</span>
-                        <span id="res-partial-info" class="text-xs text-slate-300 font-bold">Half Lot: 0.0005 | Profit: $0.91</span>
+                        <span class="text-xs font-semibold text-amber-400">📊 Custom Partial Booking Setup</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 items-center">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Book Percentage (%)</label>
+                            <select id="partial-pct" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" onchange="calculateLot()">
+                                <option value="30">30% Book / 70% Hold</option>
+                                <option value="40">40% Book / 60% Hold</option>
+                                <option value="50" selected>50% Book / 50% Hold</option>
+                                <option value="60">60% Book / 40% Hold</option>
+                                <option value="70">70% Book / 30% Hold</option>
+                            </select>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 block mb-1">Book PnL / Remaining</span>
+                            <span id="res-partial-info" class="text-xs text-slate-200 font-bold block bg-slate-900 p-2 rounded-xl border border-slate-800">Book: $0.91 | Hold: $0.91</span>
+                        </div>
                     </div>
                 </div>
 
@@ -171,7 +201,7 @@
 
                 <div class="grid grid-cols-3 gap-2 pt-2">
                     <button onclick="closeTrade('WIN')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-2 rounded-xl transition text-xs shadow-lg shadow-emerald-900/20">✅ WIN (Full)</button>
-                    <button onclick="closePartialTrade()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-2 rounded-xl transition text-xs shadow-lg shadow-amber-900/20">✂️ PARTIAL (50%)</button>
+                    <button onclick="closePartialTrade()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-2 rounded-xl transition text-xs shadow-lg shadow-amber-900/20">✂️ PARTIAL BOOK</button>
                     <button onclick="closeTrade('LOSS')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-2 rounded-xl transition text-xs shadow-lg shadow-red-900/20">❌ LOSS</button>
                 </div>
             </div>
@@ -226,6 +256,7 @@
         let currentKey = "";
         let capital = 60.62, todayPnl = 0, activeManagement = '1:3', tradesHistory = [];
         let pastedImageBase64 = null;
+        let activeHoldingTrade = null; // Stores info when partial is booked and remaining lot is in hold
 
         window.addEventListener('paste', e => {
             let items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -329,6 +360,7 @@
             let savedRisk = localStorage.getItem('ts_setting_risk');
             let savedSl = localStorage.getItem('ts_setting_sl');
             let savedMgmt = localStorage.getItem('ts_setting_mgmt');
+            let savedHolding = localStorage.getItem('ts_active_holding');
 
             if(savedAsset) document.getElementById('asset-type').value = savedAsset;
             if(savedAccType) document.getElementById('account-type').value = savedAccType;
@@ -338,6 +370,12 @@
             if(savedMgmt) {
                 activeManagement = savedMgmt;
                 setManagementUI(activeManagement);
+            }
+            if(savedHolding) {
+                try {
+                    activeHoldingTrade = JSON.parse(savedHolding);
+                    updateHoldingPanelUI();
+                } catch(e) {}
             }
 
             let localCap = localStorage.getItem('ts_local_capital');
@@ -395,6 +433,11 @@
             localStorage.setItem('ts_local_capital', capital);
             localStorage.setItem('ts_local_pnl', todayPnl);
             localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
+            if(activeHoldingTrade) {
+                localStorage.setItem('ts_active_holding', JSON.stringify(activeHoldingTrade));
+            } else {
+                localStorage.removeItem('ts_active_holding');
+            }
 
             if (!currentKey) return;
             try {
@@ -464,30 +507,21 @@
             let asset = document.getElementById('asset-type').value;
             let slLabel = document.getElementById('sl-label');
 
-            if(asset === 'gold') {
-                slLabel.innerText = "Stop Loss (Pips)";
-            } else if(asset === 'nasdaq') {
-                slLabel.innerText = "Stop Loss (Points)";
-            } else if(asset === 'btc') {
-                slLabel.innerText = "Stop Loss (Points)";
-            } else {
-                slLabel.innerText = "Stop Loss (Pips)";
-            }
+            if(asset === 'gold') slLabel.innerText = "Stop Loss (Pips)";
+            else if(asset === 'nasdaq') slLabel.innerText = "Stop Loss (Points)";
+            else if(asset === 'btc') slLabel.innerText = "Stop Loss (Points)";
+            else slLabel.innerText = "Stop Loss (Pips)";
         }
 
         function onAssetChange() {
             let asset = document.getElementById('asset-type').value;
             let slInput = document.getElementById('sl-pips');
 
-            if(asset === 'gold') {
-                slInput.value = 60;
-            } else if(asset === 'nasdaq') {
-                slInput.value = 30;
-            } else if(asset === 'btc') {
-                slInput.value = 200;
-            } else {
-                slInput.value = 20;
-            }
+            if(asset === 'gold') slInput.value = 60;
+            else if(asset === 'nasdaq') slInput.value = 30;
+            else if(asset === 'btc') slInput.value = 200;
+            else slInput.value = 20;
+
             updateLabelForAsset();
             calculateLot();
         }
@@ -507,23 +541,17 @@
             let slValue = parseFloat(document.getElementById('sl-pips').value) || 1;
             let asset = document.getElementById('asset-type').value;
             let accType = document.getElementById('account-type').value;
+            let partialPct = parseFloat(document.getElementById('partial-pct').value) || 50;
             
             let riskAmount = (capital * riskPct) / 100;
             let rawLot = 0.01;
 
-            if(asset === 'gold') {
-                rawLot = riskAmount / (slValue * 10);
-            } else if(asset === 'nasdaq') {
-                rawLot = riskAmount / (slValue * 2.0);
-            } else if(asset === 'btc') {
-                rawLot = riskAmount / (slValue * 1.0);
-            } else {
-                rawLot = riskAmount / (slValue * 10);
-            }
+            if(asset === 'gold') rawLot = riskAmount / (slValue * 10);
+            else if(asset === 'nasdaq') rawLot = riskAmount / (slValue * 2.0);
+            else if(asset === 'btc') rawLot = riskAmount / (slValue * 1.0);
+            else rawLot = riskAmount / (slValue * 10);
 
-            if(accType === 'cent') {
-                rawLot = rawLot * 100;
-            }
+            if(accType === 'cent') rawLot = rawLot * 100;
 
             let minTradableLot = accType === 'cent' ? 1.0 : 0.01;
             let mt5TradableLot = rawLot < minTradableLot ? minTradableLot : Math.round(rawLot * 100) / 100;
@@ -535,15 +563,15 @@
             else if(activeManagement === '1:5') rrMultiplier = 5;
             
             let targetReturn = riskAmount * rrMultiplier;
-            let halfLot = rawLot / 2;
-            let halfProfit = targetReturn / 2;
+            let bookAmount = (targetReturn * partialPct) / 100;
+            let holdAmount = targetReturn - bookAmount;
 
             document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
             document.getElementById('res-risk-amt').innerText = '$' + riskAmount.toFixed(2);
             document.getElementById('res-lot').innerText = rawLot.toFixed(4);
             document.getElementById('res-mt5-lot').innerText = '(' + mt5TradableLot.toFixed(2) + ')';
             document.getElementById('res-tp').innerText = '$' + targetReturn.toFixed(2);
-            document.getElementById('res-partial-info').innerText = `Half Lot: ${halfLot.toFixed(4)} | Profit: $${halfProfit.toFixed(2)}`;
+            document.getElementById('res-partial-info').innerText = `Book (${partialPct}%): $${bookAmount.toFixed(2)} | Hold (${100-partialPct}%): $${holdAmount.toFixed(2)}`;
 
             saveSettingsLocally();
         }
@@ -595,7 +623,6 @@
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
             let accType = document.getElementById('account-type').value.toUpperCase();
             let direction = document.getElementById('trade-direction').value;
-
             let screenshotFile = document.getElementById('trade-screenshot').files[0];
             
             if (pastedImageBase64) {
@@ -620,10 +647,14 @@
             else if(activeManagement === '1:5') rrMultiplier = 5;
             
             let targetReturn = riskAmount * rrMultiplier;
-            let halfProfit = targetReturn / 2;
+            let partialPct = parseFloat(document.getElementById('partial-pct').value) || 50;
+            let remainingPct = 100 - partialPct;
+            
+            let bookProfit = (targetReturn * partialPct) / 100;
+            let holdProfitTarget = (targetReturn * remainingPct) / 100;
             
             let customVal = parseFloat(document.getElementById('custom-pnl').value);
-            let tradeAmount = isNaN(customVal) ? halfProfit : Math.abs(customVal) / 2;
+            let tradeAmount = isNaN(customVal) ? bookProfit : Math.abs(customVal);
 
             capital += tradeAmount;
             todayPnl += tradeAmount;
@@ -635,26 +666,84 @@
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
             let accType = document.getElementById('account-type').value.toUpperCase();
             let direction = document.getElementById('trade-direction').value;
-
             let screenshotFile = document.getElementById('trade-screenshot').files[0];
-            let noteText = (document.getElementById('trade-note').value || 'Partial Booked') + ' (50% Partial)';
+            let noteText = (document.getElementById('trade-note').value || 'Custom Partial') + ` (${partialPct}% Booked)`;
+
+            activeHoldingTrade = {
+                asset: assetName + ` (${accType})`,
+                direction,
+                management: activeManagement,
+                remainingPct,
+                holdProfitTarget,
+                note: document.getElementById('trade-note').value || 'No note',
+                screenshot: pastedImageBase64 || null
+            };
+
+            updateHoldingPanelUI();
 
             if (pastedImageBase64) {
-                saveTradeRecord('PARTIAL (Win)', tradeAmount, assetName, accType, direction, pastedImageBase64, noteText);
+                saveTradeRecord(`PARTIAL (${partialPct}%)`, tradeAmount, assetName, accType, direction, pastedImageBase64, noteText, false);
             } else if (screenshotFile) {
                 let reader = new FileReader();
                 reader.onload = async function(e) {
-                    saveTradeRecord('PARTIAL (Win)', tradeAmount, assetName, accType, direction, e.target.result, noteText);
+                    activeHoldingTrade.screenshot = e.target.result;
+                    saveTradeRecord(`PARTIAL (${partialPct}%)`, tradeAmount, assetName, accType, direction, e.target.result, noteText, false);
                 };
                 reader.readAsDataURL(screenshotFile);
             } else {
-                saveTradeRecord('PARTIAL (Win)', tradeAmount, assetName, accType, direction, null, noteText);
+                saveTradeRecord(`PARTIAL (${partialPct}%)`, tradeAmount, assetName, accType, direction, null, noteText, false);
             }
             
-            alert('50% Partial Profit Booked! Ab baaki half trade ke liye SL Break-Even par shift kar dein.');
+            alert(`${partialPct}% Partial Booked successfully! Baaki ${remainingPct}% trade ab HOLD par hai. SL ko Break-Even par shift kar dein.`);
         }
 
-        async function saveTradeRecord(result, tradeAmount, assetName, accType, direction, screenshot, customNote = null) {
+        function updateHoldingPanelUI() {
+            let panel = document.getElementById('active-holding-panel');
+            if(activeHoldingTrade) {
+                panel.classList.remove('hidden');
+                document.getElementById('holding-info-badge').innerText = `${activeHoldingTrade.remainingPct}% Remaining`;
+                document.getElementById('holding-desc').innerText = `Active Trade: ${activeHoldingTrade.asset} (${activeHoldingTrade.direction}) | Mode: ${activeHoldingTrade.management}. Tay karein ke bachi hui trade kahan gayi?`;
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        async function closeRemainingTrade(outcome) {
+            if(!activeHoldingTrade) return;
+
+            let remainingProfit = outcome === 'TP' ? activeHoldingTrade.holdProfitTarget : 0;
+            capital += remainingProfit;
+            todayPnl += remainingProfit;
+            document.getElementById('capital').value = capital;
+            updateDisplay();
+
+            if(outcome === 'TP') playSound('win');
+
+            let resultLabel = outcome === 'TP' ? `REMAINING HIT TP` : `REMAINING HIT BE`;
+            let noteText = `Remaining ${activeHoldingTrade.remainingPct}% -> ${outcome === 'TP' ? 'Hit Target TP' : 'Hit Break-Even (0 Loss)'}`;
+
+            let recordObj = {
+                result: resultLabel,
+                amount: remainingProfit,
+                management: activeHoldingTrade.management,
+                asset: activeHoldingTrade.asset,
+                direction: activeHoldingTrade.direction,
+                note: activeHoldingTrade.note + ` | ${noteText}`,
+                screenshot: activeHoldingTrade.screenshot,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            tradesHistory.unshift(recordObj);
+            activeHoldingTrade = null;
+            updateHoldingPanelUI();
+
+            calculateLot();
+            await saveUserData();
+            updateStats();
+            alert(`Remaining trade successfully closed as ${outcome}! History mein record ho gaya hai.`);
+        }
+
+        async function saveTradeRecord(result, tradeAmount, assetName, accType, direction, screenshot, customNote = null, resetForm = true) {
             tradesHistory.unshift({
                 result, amount: tradeAmount, management: activeManagement, asset: assetName + ` (${accType})`, direction,
                 note: customNote || document.getElementById('trade-note').value || 'No note',
@@ -666,10 +755,12 @@
                 document.getElementById('drawdown-alert').classList.remove('hidden');
             }
 
-            document.getElementById('trade-note').value = '';
-            document.getElementById('custom-pnl').value = '';
-            document.getElementById('trade-screenshot').value = '';
-            clearPastedImage();
+            if(resetForm) {
+                document.getElementById('trade-note').value = '';
+                document.getElementById('custom-pnl').value = '';
+                document.getElementById('trade-screenshot').value = '';
+                clearPastedImage();
+            }
             calculateLot();
             
             await saveUserData();
@@ -680,6 +771,8 @@
             if(confirm('Kya aap saari history clear karna chahte hain?')) {
                 tradesHistory = [];
                 todayPnl = 0;
+                activeHoldingTrade = null;
+                updateHoldingPanelUI();
                 document.getElementById('drawdown-alert').classList.add('hidden');
                 updateDisplay();
                 updateStats();
@@ -725,7 +818,7 @@
                 document.getElementById('history-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Koi history nahi hai.</p>';
                 return;
             }
-            let wins = tradesHistory.filter(t => t.result === 'WIN' || t.result.includes('PARTIAL')).length;
+            let wins = tradesHistory.filter(t => t.result.includes('WIN') || t.result.includes('PARTIAL') || t.result.includes('REMAINING HIT TP')).length;
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-winrate').innerText = ((wins / total) * 100).toFixed(1) + '%';
             document.getElementById('stat-wl-count').innerText = wins + ' / ' + (total - wins);
@@ -734,8 +827,8 @@
             tradesHistory.forEach(t => {
                 let dir = t.direction || 'BUY';
                 let dirBadge = dir === 'BUY' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400';
-                let isPartial = t.result.includes('PARTIAL');
-                let resultBadgeColor = isPartial ? 'bg-amber-500/10 text-amber-400' : (t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400');
+                let isSpecial = t.result.includes('PARTIAL') || t.result.includes('REMAINING');
+                let resultBadgeColor = isSpecial ? 'bg-amber-500/10 text-amber-400' : (t.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400');
                 let screenshotHtml = t.screenshot ? `<div class="mt-2"><img src="${t.screenshot}" onclick="openImageModal('${t.screenshot}')" class="w-20 h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 transition" title="Click to view full screenshot"></div>` : '';
                 
                 html += `<div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-start text-sm">
