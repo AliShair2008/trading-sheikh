@@ -776,16 +776,23 @@
         }
 
         async function deleteSingleHistory(index) {
-            if(confirm("Kya aap is single trade record ko delete karna chahte hain?")) {
-                let removedTrade = tradesHistory[index];
+            if(confirm("Kya aap is single trade record ko delete karna chahte hain? Iska asar capital aur PnL se bhi reverse ho jaye ga.")) {
+                let tradeToRemove = tradesHistory[index];
                 
-                // Optional: Capital aur PnL mein se is trade ka asar reverse karna ho toh kar sakte hain, 
-                // lekin filhal hum sirf history entry aur stats ko update kar rahe hain.
+                // Capital aur PnL mein se is trade ka profit/loss reverse kar rahe hain
+                capital -= tradeToRemove.amount;
+                todayPnl -= tradeToRemove.amount;
+                
+                document.getElementById('capital').value = capital;
+                updateDisplay();
+
+                // History array se item remove kar rahe hain
                 tradesHistory.splice(index, 1);
                 
+                calculateLot();
                 updateStats();
                 await saveUserData();
-                alert("Trade history item delete ho gaya!");
+                alert("Trade history delete ho gayi aur capital/PnL update ho gaya!");
             }
         }
 
