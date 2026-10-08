@@ -244,7 +244,7 @@
                     <h2 class="text-lg font-bold text-white">📊 Performance Stats</h2>
                     <div class="space-x-2">
                         <button onclick="exportHistoryCSV()" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-blue-500/30 transition">📥 Export CSV</button>
-                        <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/20 transition">🗑️ Clear All</button>
+                        <button onclick="clearHistory()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-500/30 transition">🗑️ Clear All</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 text-center">
@@ -334,22 +334,44 @@
             document.getElementById('paste-preview-container').classList.add('hidden');
         }
 
-        function playSound(type) {
+        // PROFESSIONAL FEEDBACK (VIBRATION + AUDIO)
+        function playSoundAndVibrate(type) {
+            // 1. Mobile Vibration (Haptic Feedback)
+            if ("vibrate" in navigator) {
+                if(type === 'win') {
+                    navigator.vibrate([80, 50, 80]); // Double buzz for win
+                } else {
+                    navigator.vibrate(150); // Single long buzz for loss
+                }
+            }
+
+            // 2. Web Audio Ring / Tone
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
+                
                 if(type === 'win') {
-                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    // Pleasant high-pitch chime
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
                 } else {
-                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    // Low dull thud for loss
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
                 }
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
             } catch(e) {}
         }
 
@@ -670,19 +692,15 @@
             
             let riskAmount = (acc.capital * riskPct) / 100;
             
-            // EXACT MT5 / EXNESS GOLD FORMULA:
-            // For Gold (XAUUSD), 0.01 lot means $0.10 per pip (or $1 per 10 pips, so 50 pips loss on 0.01 lot = $5.00)
-            // General Rule for Gold: Risk / (SL_Pips * 0.10) for 0.01 base unit scaling.
             let rawLot = 0.01;
             if(asset === 'gold') {
-                // Formula: riskAmount / (slPips * 10) -> since 0.01 lot * 50 pips * $10 per pip per 1 lot = $5.00
                 rawLot = riskAmount / (slPips * 10.0);
             } else if(asset === 'nasdaq') {
                 rawLot = riskAmount / (slPips * 2.0);
             } else if(asset === 'btc') {
                 rawLot = riskAmount / (slPips * 1.0);
             } else {
-                rawLot = riskAmount / (slPips * 10.0); // Standard Forex
+                rawLot = riskAmount / (slPips * 10.0);
             }
 
             if(accType === 'cent') rawLot = rawLot * 100;
@@ -698,11 +716,9 @@
             
             let targetReturn = riskAmount * rrMultiplier;
 
-            // Custom Lot Override Check
             let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
             let effectiveLot = (!isNaN(customLotVal) && customLotVal > 0) ? customLotVal : mt5TradableLot;
 
-            // Exact Risk & Return based on effective lot
             let pipValuePerLot = asset === 'gold' ? 10.0 : (asset === 'nasdaq' ? 2.0 : (asset === 'btc' ? 1.0 : 10.0));
             let exactRiskForLot = slPips * effectiveLot * pipValuePerLot;
             let exactTargetForLot = exactRiskForLot * rrMultiplier;
@@ -795,7 +811,8 @@
             document.getElementById('capital').value = acc.capital;
             updateDisplay();
 
-            playSound(result === 'WIN' ? 'win' : 'loss');
+            // Trigger Professional Sound & Vibration
+            playSoundAndVibrate(result === 'WIN' ? 'win' : 'loss');
 
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
             let accType = document.getElementById('account-type').value.toUpperCase();
@@ -852,7 +869,8 @@
             document.getElementById('capital').value = acc.capital;
             updateDisplay();
 
-            playSound('win');
+            // Trigger Win Feedback for Partial Book
+            playSoundAndVibrate('win');
 
             let assetName = document.getElementById('asset-type').options[document.getElementById('asset-type').selectedIndex].text;
             let accType = document.getElementById('account-type').value.toUpperCase();
@@ -910,7 +928,7 @@
             document.getElementById('capital').value = acc.capital;
             updateDisplay();
 
-            if(outcome === 'TP') playSound('win');
+            playSoundAndVibrate(outcome === 'TP' ? 'win' : 'loss');
 
             let resultLabel = outcome === 'TP' ? `REMAINING HIT TP` : `REMAINING HIT BE`;
             let noteText = `Remaining ${acc.activeHoldingTrade.remainingPct}% -> ${outcome === 'TP' ? 'Hit Target TP' : 'Hit Break-Even (0 Loss)'}`;
