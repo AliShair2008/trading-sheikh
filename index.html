@@ -47,6 +47,21 @@
 
     <!-- Main Container -->
     <main class="flex-grow max-w-4xl w-full mx-auto p-4 space-y-6">
+        
+        <!-- MULTI ACCOUNT SWITCHER BAR -->
+        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-2 flex-grow">
+                <span class="text-xs font-semibold text-slate-400">Account:</span>
+                <select id="account-switcher" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold" onchange="switchAccount(this.value)">
+                    <!-- Dynamic Options -->
+                </select>
+                <button onclick="deleteCurrentAccount()" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1.5 rounded-lg hover:bg-red-500/25 transition" title="Delete Active Account">✕ Del</button>
+            </div>
+            <button onclick="openAddAccountModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition flex items-center space-x-1">
+                <span>+ Add New Account</span>
+            </button>
+        </div>
+
         <div id="drawdown-alert" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm font-medium flex items-center justify-between">
             <span>⚠️ <strong>Warning:</strong> Lagataar 3 trades loss ho chuki hain! Market se break lein.</span>
         </div>
@@ -121,6 +136,21 @@
                         </div>
                     </div>
                     <div><span class="text-xs text-slate-400 block">Target Return</span><span id="res-tp" class="text-base font-bold text-emerald-400">$1.82</span></div>
+                </div>
+
+                <!-- CUSTOM LOT OVERRIDE / MANUAL LOT TESTER BOX -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-emerald-400">🔍 Custom Lot Override (Check Risk/Reward with Custom Lot)</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+                        <div>
+                            <input type="number" id="custom-lot-input" placeholder="e.g. 0.05 (Khali chhorein agar auto use karni hai)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                        </div>
+                        <div>
+                            <span id="res-custom-lot-info" class="text-xs text-slate-300 font-semibold block bg-slate-900 p-2 rounded-xl border border-slate-800 leading-relaxed">Using Auto Suggested Lot</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- CUSTOM PARTIAL BOOKING HELPER BOX -->
@@ -230,6 +260,25 @@
         </div>
     </main>
 
+    <!-- ADD ACCOUNT MODAL -->
+    <div id="add-account-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4">
+            <h3 class="text-base font-bold text-white">➕ Add New Trading Account</h3>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Account Name (e.g. Prop Firm, Gold Acc)</label>
+                <input type="text" id="new-acc-name" placeholder="Account Name..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Initial Capital ($)</label>
+                <input type="number" id="new-acc-capital" value="100" step="0.01" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="createNewAccount()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs transition">Create</button>
+                <button onclick="closeAddAccountModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- FULLSCREEN IMAGE MODAL -->
     <div id="image-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4" onclick="closeImageModal()">
         <div class="relative max-w-3xl w-full">
@@ -254,9 +303,12 @@
         const db = firebase.firestore();
 
         let currentKey = "";
-        let capital = 60.62, todayPnl = 0, activeManagement = '1:3', tradesHistory = [];
+        let accounts = {
+            "Main Account": { capital: 60.62, todayPnl: 0, tradesHistory: [], activeHoldingTrade: null }
+        };
+        let currentAccountId = "Main Account";
+        let activeManagement = '1:3';
         let pastedImageBase64 = null;
-        let activeHoldingTrade = null;
 
         window.addEventListener('paste', e => {
             let items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -360,7 +412,6 @@
             let savedRisk = localStorage.getItem('ts_setting_risk');
             let savedSl = localStorage.getItem('ts_setting_sl');
             let savedMgmt = localStorage.getItem('ts_setting_mgmt');
-            let savedHolding = localStorage.getItem('ts_active_holding');
 
             if(savedAsset) document.getElementById('asset-type').value = savedAsset;
             if(savedAccType) document.getElementById('account-type').value = savedAccType;
@@ -371,26 +422,19 @@
                 activeManagement = savedMgmt;
                 setManagementUI(activeManagement);
             }
-            if(savedHolding) {
-                try {
-                    activeHoldingTrade = JSON.parse(savedHolding);
-                    updateHoldingPanelUI();
-                } catch(e) {}
+
+            let localAccounts = localStorage.getItem('ts_local_accounts');
+            let localActiveAcc = localStorage.getItem('ts_local_active_acc');
+
+            if (localAccounts !== null) {
+                try { accounts = JSON.parse(localAccounts); } catch(e) {}
+            }
+            if (localActiveAcc !== null && accounts[localActiveAcc]) {
+                currentAccountId = localActiveAcc;
             }
 
-            let localCap = localStorage.getItem('ts_local_capital');
-            let localPnl = localStorage.getItem('ts_local_pnl');
-            let localHist = localStorage.getItem('ts_local_history');
-
-            if (localCap !== null) capital = parseFloat(localCap);
-            if (localPnl !== null) todayPnl = parseFloat(localPnl);
-            if (localHist !== null) {
-                try { tradesHistory = JSON.parse(localHist); } catch(e) {}
-            }
-
-            document.getElementById('capital').value = capital;
-            updateDisplay();
-            calculateLot();
+            updateAccountSwitcherUI();
+            loadActiveAccountData();
             updateLabelForAsset();
 
             if (!currentKey) return;
@@ -399,21 +443,18 @@
                 let doc = await docRef.get();
                 if (doc.exists) {
                     let data = doc.data();
-                    if(data.capital !== undefined) {
-                        capital = data.capital;
-                        todayPnl = data.todayPnl || 0;
-                        tradesHistory = data.tradesHistory || [];
-                        
-                        localStorage.setItem('ts_local_capital', capital);
-                        localStorage.setItem('ts_local_pnl', todayPnl);
-                        localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
+                    if(data.accounts !== undefined) {
+                        accounts = data.accounts;
+                        if(data.currentAccountId && accounts[data.currentAccountId]) {
+                            currentAccountId = data.currentAccountId;
+                        }
+                        saveAccountsLocally();
                     }
                 } else {
                     await saveUserData();
                 }
-                document.getElementById('capital').value = capital;
-                updateDisplay();
-                calculateLot();
+                updateAccountSwitcherUI();
+                loadActiveAccountData();
             } catch(err) {
                 console.log("Offline mode: Using local storage cache.");
             }
@@ -428,23 +469,20 @@
             localStorage.setItem('ts_setting_mgmt', activeManagement);
         }
 
+        function saveAccountsLocally() {
+            localStorage.setItem('ts_local_accounts', JSON.stringify(accounts));
+            localStorage.setItem('ts_local_active_acc', currentAccountId);
+        }
+
         async function saveUserData() {
             saveSettingsLocally();
-            localStorage.setItem('ts_local_capital', capital);
-            localStorage.setItem('ts_local_pnl', todayPnl);
-            localStorage.setItem('ts_local_history', JSON.stringify(tradesHistory));
-            if(activeHoldingTrade) {
-                localStorage.setItem('ts_active_holding', JSON.stringify(activeHoldingTrade));
-            } else {
-                localStorage.removeItem('ts_active_holding');
-            }
+            saveAccountsLocally();
 
             if (!currentKey) return;
             try {
                 await db.collection("users").doc(currentKey).set({
-                    capital,
-                    todayPnl,
-                    tradesHistory
+                    accounts,
+                    currentAccountId
                 }, { merge: true });
             } catch(e) {
                 console.log("Firebase sync failed, saved locally.");
@@ -526,10 +564,95 @@
             calculateLot();
         }
 
+        function updateAccountSwitcherUI() {
+            let switcher = document.getElementById('account-switcher');
+            let html = '';
+            for(let accName in accounts) {
+                let sel = (accName === currentAccountId) ? 'selected' : '';
+                html += `<option value="${accName}" ${sel}>${accName} ($${accounts[accName].capital.toFixed(2)})</option>`;
+            }
+            switcher.innerHTML = html;
+        }
+
+        function switchAccount(accName) {
+            if(accounts[accName]) {
+                currentAccountId = accName;
+                loadActiveAccountData();
+                saveUserData();
+            }
+        }
+
+        function loadActiveAccountData() {
+            let acc = accounts[currentAccountId];
+            document.getElementById('capital').value = acc.capital;
+            updateDisplay();
+            calculateLot();
+            updateHoldingPanelUI();
+            updateStats();
+        }
+
+        function openAddAccountModal() {
+            document.getElementById('new-acc-name').value = '';
+            document.getElementById('new-acc-capital').value = '100';
+            document.getElementById('add-account-modal').classList.remove('hidden');
+        }
+
+        function closeAddAccountModal() {
+            document.getElementById('add-account-modal').classList.add('hidden');
+        }
+
+        async function createNewAccount() {
+            let name = document.getElementById('new-acc-name').value.trim();
+            let cap = parseFloat(document.getElementById('new-acc-capital').value);
+
+            if(!name) {
+                alert("Pehle account ka naam likhein!");
+                return;
+            }
+            if(accounts[name]) {
+                alert("Is naam se account pehle hi mojood hai!");
+                return;
+            }
+            if(isNaN(cap) || cap <= 0) {
+                alert("Baraye meherbani theek capital enter karein!");
+                return;
+            }
+
+            accounts[name] = {
+                capital: cap,
+                todayPnl: 0,
+                tradesHistory: [],
+                activeHoldingTrade: null
+            };
+
+            currentAccountId = name;
+            closeAddAccountModal();
+            updateAccountSwitcherUI();
+            loadActiveAccountData();
+            await saveUserData();
+            alert(`Account "${name}" successfully create ho gaya!`);
+        }
+
+        async function deleteCurrentAccount() {
+            let keys = Object.keys(accounts);
+            if(keys.length <= 1) {
+                alert("Aap saare accounts delete nahi kar sakte, kam az kam ek account hona lazmi hai!");
+                return;
+            }
+            if(confirm(`Kya aap account "${currentAccountId}" ko delete karna chahte hain?`)) {
+                delete accounts[currentAccountId];
+                currentAccountId = Object.keys(accounts)[0];
+                updateAccountSwitcherUI();
+                loadActiveAccountData();
+                await saveUserData();
+                alert("Account delete ho gaya!");
+            }
+        }
+
         function updateCapitalFromInput() {
             let val = parseFloat(document.getElementById('capital').value);
             if (!isNaN(val)) {
-                capital = val;
+                accounts[currentAccountId].capital = val;
                 updateDisplay();
                 calculateLot();
                 saveUserData();
@@ -537,6 +660,7 @@
         }
 
         function calculateLot() {
+            let acc = accounts[currentAccountId];
             let riskPct = parseFloat(document.getElementById('risk-pct').value) || 0;
             let slValue = parseFloat(document.getElementById('sl-pips').value) || 1;
             let asset = document.getElementById('asset-type').value;
@@ -544,7 +668,7 @@
             let partialPct = parseFloat(document.getElementById('partial-pct').value) || 50;
             let remainingPct = 100 - partialPct;
             
-            let riskAmount = (capital * riskPct) / 100;
+            let riskAmount = (acc.capital * riskPct) / 100;
             let rawLot = 0.01;
 
             if(asset === 'gold') rawLot = riskAmount / (slValue * 10);
@@ -557,6 +681,10 @@
             let minTradableLot = accType === 'cent' ? 1.0 : 0.01;
             let mt5TradableLot = rawLot < minTradableLot ? minTradableLot : Math.round(rawLot * 100) / 100;
 
+            // Custom Lot Override Check
+            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
+            let effectiveLot = (!isNaN(customLotVal) && customLotVal > 0) ? customLotVal : mt5TradableLot;
+
             let rrMultiplier = 0;
             if(activeManagement === '1:1') rrMultiplier = 1;
             else if(activeManagement === '1:2') rrMultiplier = 2;
@@ -567,51 +695,64 @@
             let bookAmount = (targetReturn * partialPct) / 100;
             let holdAmount = targetReturn - bookAmount;
 
-            let bookLot = (mt5TradableLot * partialPct) / 100;
-            let holdLot = mt5TradableLot - bookLot;
+            let bookLot = (effectiveLot * partialPct) / 100;
+            let holdLot = effectiveLot - bookLot;
             
             let bookLotStr = bookLot < 0.01 ? bookLot.toFixed(4) : bookLot.toFixed(2);
             let holdLotStr = holdLot < 0.01 ? holdLot.toFixed(4) : holdLot.toFixed(2);
 
-            document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
+            document.getElementById('display-capital').innerText = '$' + acc.capital.toFixed(2);
             document.getElementById('res-risk-amt').innerText = '$' + riskAmount.toFixed(2);
             document.getElementById('res-lot').innerText = rawLot.toFixed(4);
             document.getElementById('res-mt5-lot').innerText = '(' + mt5TradableLot.toFixed(2) + ')';
             document.getElementById('res-tp').innerText = '$' + targetReturn.toFixed(2);
             
+            if(!isNaN(customLotVal) && customLotVal > 0) {
+                // Custom Lot ke hisab se Risk & Return calculate karna
+                let customRisk = riskAmount * (customLotVal / mt5TradableLot);
+                let customTarget = targetReturn * (customLotVal / mt5TradableLot);
+                document.getElementById('res-custom-lot-info').innerHTML = `Custom Lot (${customLotVal}) Active: Risk = <strong class="text-red-400">-$${customRisk.toFixed(2)}</strong> | Target = <strong class="text-emerald-400">+$${customTarget.toFixed(2)}</strong>`;
+            } else {
+                document.getElementById('res-custom-lot-info').innerText = `Using Auto Suggested Lot (${mt5TradableLot})`;
+            }
+
             document.getElementById('res-partial-info').innerHTML = `Book (${partialPct}%): <strong>$${bookAmount.toFixed(2)}</strong> (${bookLotStr} Lot)<br>Hold (${remainingPct}%): <strong>$${holdAmount.toFixed(2)}</strong> (${holdLotStr} Lot)`;
 
             saveSettingsLocally();
         }
 
         function updateDisplay() {
-            document.getElementById('display-capital').innerText = '$' + capital.toFixed(2);
+            let acc = accounts[currentAccountId];
+            document.getElementById('display-capital').innerText = '$' + acc.capital.toFixed(2);
             let pnlEl = document.getElementById('display-pnl');
-            pnlEl.innerText = (todayPnl >= 0 ? '+$' : '-$') + Math.abs(todayPnl).toFixed(2);
-            pnlEl.className = 'text-2xl font-bold mt-1 ' + (todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
+            pnlEl.innerText = (acc.todayPnl >= 0 ? '+$' : '-$') + Math.abs(acc.todayPnl).toFixed(2);
+            pnlEl.className = 'text-2xl font-bold mt-1 ' + (acc.todayPnl >= 0 ? 'text-emerald-400' : 'text-red-400');
         }
 
         function editCapitalPrompt() {
-            let newCap = prompt("Apna naya total capital enter karein:", capital.toFixed(2));
+            let acc = accounts[currentAccountId];
+            let newCap = prompt("Apna naya total capital enter karein:", acc.capital.toFixed(2));
             if(newCap !== null && !isNaN(newCap)) {
-                capital = parseFloat(newCap);
-                document.getElementById('capital').value = capital;
+                acc.capital = parseFloat(newCap);
+                document.getElementById('capital').value = acc.capital;
                 updateDisplay();
                 calculateLot();
+                updateAccountSwitcherUI();
                 saveUserData();
             }
         }
 
         function resetDailyPnl() {
             if(confirm("Kya aap aaj ka PnL reset kar ke $0 karna chahte hain?")) {
-                todayPnl = 0;
+                accounts[currentAccountId].todayPnl = 0;
                 updateDisplay();
                 saveUserData();
             }
         }
 
         async function closeTrade(result) {
-            let riskAmount = (capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
+            let acc = accounts[currentAccountId];
+            let riskAmount = (acc.capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
             let rrMultiplier = 0;
             if(activeManagement === '1:1') rrMultiplier = 1;
             else if(activeManagement === '1:2') rrMultiplier = 2;
@@ -619,11 +760,17 @@
             else if(activeManagement === '1:5') rrMultiplier = 5;
             
             let customVal = parseFloat(document.getElementById('custom-pnl').value);
-            let tradeAmount = isNaN(customVal) ? (result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount) : (result === 'WIN' ? Math.abs(customVal) : -Math.abs(customVal));
+            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
+            let mt5TradableLot = parseFloat(document.getElementById('res-mt5-lot').innerText.replace(/[()]/g, '')) || 0.01;
             
-            capital += tradeAmount;
-            todayPnl += tradeAmount;
-            document.getElementById('capital').value = capital;
+            let baseTradeAmt = isNaN(customVal) ? (result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount) : (result === 'WIN' ? Math.abs(customVal) : -Math.abs(customVal));
+            
+            // Agar custom lot enter ki hui hai toh PnL ko scale kar dena
+            let tradeAmount = (!isNaN(customLotVal) && customLotVal > 0) ? baseTradeAmt * (customLotVal / mt5TradableLot) : baseTradeAmt;
+            
+            acc.capital += tradeAmount;
+            acc.todayPnl += tradeAmount;
+            document.getElementById('capital').value = acc.capital;
             updateDisplay();
 
             playSound(result === 'WIN' ? 'win' : 'loss');
@@ -647,7 +794,8 @@
         }
 
         async function closePartialTrade() {
-            let riskAmount = (capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
+            let acc = accounts[currentAccountId];
+            let riskAmount = (acc.capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
             let rrMultiplier = 0;
             if(activeManagement === '1:1') rrMultiplier = 1;
             else if(activeManagement === '1:2') rrMultiplier = 2;
@@ -662,11 +810,15 @@
             let holdProfitTarget = (targetReturn * remainingPct) / 100;
             
             let customVal = parseFloat(document.getElementById('custom-pnl').value);
-            let tradeAmount = isNaN(customVal) ? bookProfit : Math.abs(customVal);
+            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
+            let mt5TradableLot = parseFloat(document.getElementById('res-mt5-lot').innerText.replace(/[()]/g, '')) || 0.01;
+            
+            let baseBookAmt = isNaN(customVal) ? bookProfit : Math.abs(customVal);
+            let tradeAmount = (!isNaN(customLotVal) && customLotVal > 0) ? baseBookAmt * (customLotVal / mt5TradableLot) : baseBookAmt;
 
-            capital += tradeAmount;
-            todayPnl += tradeAmount;
-            document.getElementById('capital').value = capital;
+            acc.capital += tradeAmount;
+            acc.todayPnl += tradeAmount;
+            document.getElementById('capital').value = acc.capital;
             updateDisplay();
 
             playSound('win');
@@ -677,12 +829,14 @@
             let screenshotFile = document.getElementById('trade-screenshot').files[0];
             let noteText = (document.getElementById('trade-note').value || 'Custom Partial') + ` (${partialPct}% Booked)`;
 
-            activeHoldingTrade = {
+            let holdTargetScaled = (!isNaN(customLotVal) && customLotVal > 0) ? holdProfitTarget * (customLotVal / mt5TradableLot) : holdProfitTarget;
+
+            acc.activeHoldingTrade = {
                 asset: assetName + ` (${accType})`,
                 direction,
                 management: activeManagement,
                 remainingPct,
-                holdProfitTarget,
+                holdProfitTarget: holdTargetScaled,
                 note: document.getElementById('trade-note').value || 'No note',
                 screenshot: pastedImageBase64 || null
             };
@@ -694,7 +848,7 @@
             } else if (screenshotFile) {
                 let reader = new FileReader();
                 reader.onload = async function(e) {
-                    activeHoldingTrade.screenshot = e.target.result;
+                    acc.activeHoldingTrade.screenshot = e.target.result;
                     saveTradeRecord(`PARTIAL (${partialPct}%)`, tradeAmount, assetName, accType, direction, e.target.result, noteText, false);
                 };
                 reader.readAsDataURL(screenshotFile);
@@ -706,43 +860,45 @@
         }
 
         function updateHoldingPanelUI() {
+            let acc = accounts[currentAccountId];
             let panel = document.getElementById('active-holding-panel');
-            if(activeHoldingTrade) {
+            if(acc.activeHoldingTrade) {
                 panel.classList.remove('hidden');
-                document.getElementById('holding-info-badge').innerText = `${activeHoldingTrade.remainingPct}% Remaining`;
-                document.getElementById('holding-desc').innerText = `Active Trade: ${activeHoldingTrade.asset} (${activeHoldingTrade.direction}) | Mode: ${activeHoldingTrade.management}. Tay karein ke bachi hui trade kahan gayi?`;
+                document.getElementById('holding-info-badge').innerText = `${acc.activeHoldingTrade.remainingPct}% Remaining`;
+                document.getElementById('holding-desc').innerText = `Active Trade: ${acc.activeHoldingTrade.asset} (${acc.activeHoldingTrade.direction}) | Mode: ${acc.activeHoldingTrade.management}. Tay karein ke bachi hui trade kahan gayi?`;
             } else {
                 panel.classList.add('hidden');
             }
         }
 
         async function closeRemainingTrade(outcome) {
-            if(!activeHoldingTrade) return;
+            let acc = accounts[currentAccountId];
+            if(!acc.activeHoldingTrade) return;
 
-            let remainingProfit = outcome === 'TP' ? activeHoldingTrade.holdProfitTarget : 0;
-            capital += remainingProfit;
-            todayPnl += remainingProfit;
-            document.getElementById('capital').value = capital;
+            let remainingProfit = outcome === 'TP' ? acc.activeHoldingTrade.holdProfitTarget : 0;
+            acc.capital += remainingProfit;
+            acc.todayPnl += remainingProfit;
+            document.getElementById('capital').value = acc.capital;
             updateDisplay();
 
             if(outcome === 'TP') playSound('win');
 
             let resultLabel = outcome === 'TP' ? `REMAINING HIT TP` : `REMAINING HIT BE`;
-            let noteText = `Remaining ${activeHoldingTrade.remainingPct}% -> ${outcome === 'TP' ? 'Hit Target TP' : 'Hit Break-Even (0 Loss)'}`;
+            let noteText = `Remaining ${acc.activeHoldingTrade.remainingPct}% -> ${outcome === 'TP' ? 'Hit Target TP' : 'Hit Break-Even (0 Loss)'}`;
 
             let recordObj = {
                 result: resultLabel,
                 amount: remainingProfit,
-                management: activeHoldingTrade.management,
-                asset: activeHoldingTrade.asset,
-                direction: activeHoldingTrade.direction,
-                note: activeHoldingTrade.note + ` | ${noteText}`,
-                screenshot: activeHoldingTrade.screenshot,
+                management: acc.activeHoldingTrade.management,
+                asset: acc.activeHoldingTrade.asset,
+                direction: acc.activeHoldingTrade.direction,
+                note: acc.activeHoldingTrade.note + ` | ${noteText}`,
+                screenshot: acc.activeHoldingTrade.screenshot,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
 
-            tradesHistory.unshift(recordObj);
-            activeHoldingTrade = null;
+            acc.tradesHistory.unshift(recordObj);
+            acc.activeHoldingTrade = null;
             updateHoldingPanelUI();
 
             calculateLot();
@@ -752,44 +908,48 @@
         }
 
         async function saveTradeRecord(result, tradeAmount, assetName, accType, direction, screenshot, customNote = null, resetForm = true) {
-            tradesHistory.unshift({
+            let acc = accounts[currentAccountId];
+            acc.tradesHistory.unshift({
                 result, amount: tradeAmount, management: activeManagement, asset: assetName + ` (${accType})`, direction,
                 note: customNote || document.getElementById('trade-note').value || 'No note',
                 screenshot: screenshot || null,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
-            if(tradesHistory.length >= 3 && tradesHistory[0].result === 'LOSS' && tradesHistory[1].result === 'LOSS' && tradesHistory[2].result === 'LOSS') {
+            if(acc.tradesHistory.length >= 3 && acc.tradesHistory[0].result === 'LOSS' && acc.tradesHistory[1].result === 'LOSS' && acc.tradesHistory[2].result === 'LOSS') {
                 document.getElementById('drawdown-alert').classList.remove('hidden');
+            } else {
+                document.getElementById('drawdown-alert').classList.add('hidden');
             }
 
             if(resetForm) {
                 document.getElementById('trade-note').value = '';
                 document.getElementById('custom-pnl').value = '';
+                document.getElementById('custom-lot-input').value = '';
                 document.getElementById('trade-screenshot').value = '';
                 clearPastedImage();
             }
             calculateLot();
-            
+            updateAccountSwitcherUI();
             await saveUserData();
             updateStats();
         }
 
         async function deleteSingleHistory(index) {
             if(confirm("Kya aap is single trade record ko delete karna chahte hain? Iska asar capital aur PnL se bhi reverse ho jaye ga.")) {
-                let tradeToRemove = tradesHistory[index];
+                let acc = accounts[currentAccountId];
+                let tradeToRemove = acc.tradesHistory[index];
                 
-                // Capital aur PnL mein se is trade ka profit/loss reverse kar rahe hain
-                capital -= tradeToRemove.amount;
-                todayPnl -= tradeToRemove.amount;
+                acc.capital -= tradeToRemove.amount;
+                acc.todayPnl -= tradeToRemove.amount;
                 
-                document.getElementById('capital').value = capital;
+                document.getElementById('capital').value = acc.capital;
                 updateDisplay();
 
-                // History array se item remove kar rahe hain
-                tradesHistory.splice(index, 1);
+                acc.tradesHistory.splice(index, 1);
                 
                 calculateLot();
+                updateAccountSwitcherUI();
                 updateStats();
                 await saveUserData();
                 alert("Trade history delete ho gayi aur capital/PnL update ho gaya!");
@@ -797,33 +957,36 @@
         }
 
         async function clearHistory() {
-            if(confirm('Kya aap saari history clear karna chahte hain?')) {
-                tradesHistory = [];
-                todayPnl = 0;
-                activeHoldingTrade = null;
+            if(confirm('Kya aap is account ki saari history clear karna chahte hain?')) {
+                let acc = accounts[currentAccountId];
+                acc.tradesHistory = [];
+                acc.todayPnl = 0;
+                acc.activeHoldingTrade = null;
                 updateHoldingPanelUI();
                 document.getElementById('drawdown-alert').classList.add('hidden');
                 updateDisplay();
                 updateStats();
+                updateAccountSwitcherUI();
                 await saveUserData();
                 alert('History cleared successfully!');
             }
         }
 
         function exportHistoryCSV() {
-            if(tradesHistory.length === 0) {
+            let acc = accounts[currentAccountId];
+            if(acc.tradesHistory.length === 0) {
                 alert("Export karne ke liye koi history nahi hai!");
                 return;
             }
             let csvContent = "data:text/csv;charset=utf-8,Result,Direction,Asset,Mode,Amount,Time,Note\n";
-            tradesHistory.forEach(t => {
+            acc.tradesHistory.forEach(t => {
                 let row = [t.result, t.direction || 'BUY', `"${t.asset}"`, t.management, t.amount.toFixed(2), t.time, `"${t.note}"`].join(",");
                 csvContent += row + "\n";
             });
             let encodedUri = encodeURI(csvContent);
             let link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "trading_sheikh_history.csv");
+            link.setAttribute("download", `trading_sheikh_${currentAccountId.replace(/\s+/g, '_')}_history.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -839,7 +1002,8 @@
         }
 
         function updateStats() {
-            let total = tradesHistory.length;
+            let acc = accounts[currentAccountId];
+            let total = acc.tradesHistory.length;
             if(total === 0) {
                 document.getElementById('stat-total').innerText = '0';
                 document.getElementById('stat-winrate').innerText = '0%';
@@ -847,13 +1011,13 @@
                 document.getElementById('history-list').innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Koi history nahi hai.</p>';
                 return;
             }
-            let wins = tradesHistory.filter(t => t.result.includes('WIN') || t.result.includes('PARTIAL') || t.result.includes('REMAINING HIT TP')).length;
+            let wins = acc.tradesHistory.filter(t => t.result.includes('WIN') || t.result.includes('PARTIAL') || t.result.includes('REMAINING HIT TP')).length;
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-winrate').innerText = ((wins / total) * 100).toFixed(1) + '%';
             document.getElementById('stat-wl-count').innerText = wins + ' / ' + (total - wins);
 
             let html = '';
-            tradesHistory.forEach((t, index) => {
+            acc.tradesHistory.forEach((t, index) => {
                 let dir = t.direction || 'BUY';
                 let dirBadge = dir === 'BUY' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400';
                 let isSpecial = t.result.includes('PARTIAL') || t.result.includes('REMAINING');
@@ -873,7 +1037,7 @@
                     </div>
                     <div class="flex flex-col items-end space-y-2">
                         <div class="font-bold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}</div>
-                        <button onclick="deleteSingleHistory(${index})" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/20 transition">✕ Delete</button>
+                        <button onclick="deleteSingleHistory(${index})" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/25 transition">✕ Delete</button>
                     </div>
                 </div>`;
             });
