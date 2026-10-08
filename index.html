@@ -114,38 +114,38 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Total Capital ($)</label>
-                        <input type="number" id="capital" value="60.62" step="0.01" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="updateCapitalFromInput()">
+                        <input type="number" id="capital" value="1000" step="0.01" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="updateCapitalFromInput()">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Risk Percentage (%)</label>
-                        <input type="number" id="risk-pct" value="1" step="0.1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                        <input type="number" id="risk-pct" value="5" step="0.1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                     <div>
-                        <label id="sl-label" class="block text-xs font-semibold text-slate-400 mb-1">Stop Loss (Pips)</label>
-                        <input type="number" id="sl-pips" value="60" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                        <label id="sl-label" class="block text-xs font-semibold text-slate-400 mb-1">Stop Loss (Points / Pips)</label>
+                        <input type="number" id="sl-pips" value="300" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                     </div>
                 </div>
 
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center">
-                    <div><span class="text-xs text-slate-400 block">Risk Amount</span><span id="res-risk-amt" class="text-base font-bold text-red-400">$0.61</span></div>
+                    <div><span class="text-xs text-slate-400 block">Risk Amount</span><span id="res-risk-amt" class="text-base font-bold text-red-400">$50.00</span></div>
                     <div>
                         <span class="text-xs text-slate-400 block">Suggested Lot</span>
                         <div class="flex items-center justify-center space-x-1">
-                            <span id="res-lot" class="text-sm font-bold text-emerald-400">0.0010</span>
-                            <span id="res-mt5-lot" class="text-xs font-semibold text-slate-400" title="MT5 Tradable Lot">(0.01)</span>
+                            <span id="res-lot" class="text-sm font-bold text-emerald-400">0.0167</span>
+                            <span id="res-mt5-lot" class="text-xs font-semibold text-slate-400" title="MT5 Tradable Lot">(0.02)</span>
                         </div>
                     </div>
-                    <div><span class="text-xs text-slate-400 block">Target Return</span><span id="res-tp" class="text-base font-bold text-emerald-400">$1.82</span></div>
+                    <div><span class="text-xs text-slate-400 block">Target Return</span><span id="res-tp" class="text-base font-bold text-emerald-400">$150.00</span></div>
                 </div>
 
                 <!-- CUSTOM LOT OVERRIDE / MANUAL LOT TESTER BOX -->
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-emerald-400">🔍 Custom Lot Override (Check Risk/Reward with Custom Lot)</span>
+                        <span class="text-xs font-semibold text-emerald-400">🔍 Custom Lot Override (Check Exact Risk/Reward with Custom Lot)</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
                         <div>
-                            <input type="number" id="custom-lot-input" placeholder="e.g. 0.05 (Khali chhorein agar auto use karni hai)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
+                            <input type="number" id="custom-lot-input" placeholder="e.g. 0.02 (Khali chhorein agar auto use karni hai)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" oninput="calculateLot()">
                         </div>
                         <div>
                             <span id="res-custom-lot-info" class="text-xs text-slate-300 font-semibold block bg-slate-900 p-2 rounded-xl border border-slate-800 leading-relaxed">Using Auto Suggested Lot</span>
@@ -171,7 +171,7 @@
                         </div>
                         <div>
                             <span class="text-xs text-slate-400 block mb-1">Book & Hold (PnL / Lot)</span>
-                            <span id="res-partial-info" class="text-xs text-slate-200 font-bold block bg-slate-900 p-2 rounded-xl border border-slate-800 leading-relaxed">Book: $0.91 (0.005) | Hold: $0.91 (0.005)</span>
+                            <span id="res-partial-info" class="text-xs text-slate-200 font-bold block bg-slate-900 p-2 rounded-xl border border-slate-800 leading-relaxed">Book: $75.00 (0.01) | Hold: $75.00 (0.01)</span>
                         </div>
                     </div>
                 </div>
@@ -304,7 +304,7 @@
 
         let currentKey = "";
         let accounts = {
-            "Main Account": { capital: 60.62, todayPnl: 0, tradesHistory: [], activeHoldingTrade: null }
+            "Main Account": { capital: 1000, todayPnl: 0, tradesHistory: [], activeHoldingTrade: null }
         };
         let currentAccountId = "Main Account";
         let activeManagement = '1:3';
@@ -545,7 +545,7 @@
             let asset = document.getElementById('asset-type').value;
             let slLabel = document.getElementById('sl-label');
 
-            if(asset === 'gold') slLabel.innerText = "Stop Loss (Pips)";
+            if(asset === 'gold') slLabel.innerText = "Stop Loss (Points e.g. 300 = 30 Pips)";
             else if(asset === 'nasdaq') slLabel.innerText = "Stop Loss (Points)";
             else if(asset === 'btc') slLabel.innerText = "Stop Loss (Points)";
             else slLabel.innerText = "Stop Loss (Pips)";
@@ -555,7 +555,7 @@
             let asset = document.getElementById('asset-type').value;
             let slInput = document.getElementById('sl-pips');
 
-            if(asset === 'gold') slInput.value = 60;
+            if(asset === 'gold') slInput.value = 300;
             else if(asset === 'nasdaq') slInput.value = 30;
             else if(asset === 'btc') slInput.value = 200;
             else slInput.value = 20;
@@ -593,7 +593,7 @@
 
         function openAddAccountModal() {
             document.getElementById('new-acc-name').value = '';
-            document.getElementById('new-acc-capital').value = '100';
+            document.getElementById('new-acc-capital').value = '1000';
             document.getElementById('add-account-modal').classList.remove('hidden');
         }
 
@@ -669,21 +669,22 @@
             let remainingPct = 100 - partialPct;
             
             let riskAmount = (acc.capital * riskPct) / 100;
-            let rawLot = 0.01;
+            
+            // Accurate Exness/MT5 Gold & Forex Lot Formula:
+            // Gold Standard: 1 Lot = 100 oz. 1 point ($0.01 movement) for 0.01 lot = $0.01 per point. 
+            // For 1 full lot, 1 point = $1.00. Therefore: Risk / (SL_Points * $1.00)
+            let valuePerPointPerLot = 1.0; 
+            if(asset === 'gold') valuePerPointPerLot = 1.0; // 1 point = $1 per 1 lot
+            else if(asset === 'nasdaq') valuePerPointPerLot = 2.0;
+            else if(asset === 'btc') valuePerPointPerLot = 1.0;
+            else valuePerPointPerLot = 10.0; // Forex standard pip value ($10 per pip per 1 lot)
 
-            if(asset === 'gold') rawLot = riskAmount / (slValue * 10);
-            else if(asset === 'nasdaq') rawLot = riskAmount / (slValue * 2.0);
-            else if(asset === 'btc') rawLot = riskAmount / (slValue * 1.0);
-            else rawLot = riskAmount / (slValue * 10);
+            let rawLot = riskAmount / (slValue * valuePerPointPerLot);
 
             if(accType === 'cent') rawLot = rawLot * 100;
 
             let minTradableLot = accType === 'cent' ? 1.0 : 0.01;
             let mt5TradableLot = rawLot < minTradableLot ? minTradableLot : Math.round(rawLot * 100) / 100;
-
-            // Custom Lot Override Check
-            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
-            let effectiveLot = (!isNaN(customLotVal) && customLotVal > 0) ? customLotVal : mt5TradableLot;
 
             let rrMultiplier = 0;
             if(activeManagement === '1:1') rrMultiplier = 1;
@@ -692,8 +693,17 @@
             else if(activeManagement === '1:5') rrMultiplier = 5;
             
             let targetReturn = riskAmount * rrMultiplier;
-            let bookAmount = (targetReturn * partialPct) / 100;
-            let holdAmount = targetReturn - bookAmount;
+
+            // Custom Lot Override Check
+            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
+            let effectiveLot = (!isNaN(customLotVal) && customLotVal > 0) ? customLotVal : mt5TradableLot;
+
+            // Exact Risk & Return based on effective lot
+            let exactRiskForLot = slValue * effectiveLot * valuePerPointPerLot;
+            let exactTargetForLot = exactRiskForLot * rrMultiplier;
+
+            let bookAmount = (exactTargetForLot * partialPct) / 100;
+            let holdAmount = exactTargetForLot - bookAmount;
 
             let bookLot = (effectiveLot * partialPct) / 100;
             let holdLot = effectiveLot - bookLot;
@@ -708,12 +718,11 @@
             document.getElementById('res-tp').innerText = '$' + targetReturn.toFixed(2);
             
             if(!isNaN(customLotVal) && customLotVal > 0) {
-                // Custom Lot ke hisab se Risk & Return calculate karna
-                let customRisk = riskAmount * (customLotVal / mt5TradableLot);
-                let customTarget = targetReturn * (customLotVal / mt5TradableLot);
-                document.getElementById('res-custom-lot-info').innerHTML = `Custom Lot (${customLotVal}) Active: Risk = <strong class="text-red-400">-$${customRisk.toFixed(2)}</strong> | Target = <strong class="text-emerald-400">+$${customTarget.toFixed(2)}</strong>`;
+                document.getElementById('res-custom-lot-info').innerHTML = `Custom Lot (${customLotVal}) Active: Risk = <strong class="text-red-400">-$${exactRiskForLot.toFixed(2)}</strong> | Target = <strong class="text-emerald-400">+$${exactTargetForLot.toFixed(2)}</strong>`;
             } else {
-                document.getElementById('res-custom-lot-info').innerText = `Using Auto Suggested Lot (${mt5TradableLot})`;
+                let autoRiskForTradable = slValue * mt5TradableLot * valuePerPointPerLot;
+                let autoTargetForTradable = autoRiskForTradable * rrMultiplier;
+                document.getElementById('res-custom-lot-info').innerHTML = `Using Auto Suggested Tradable Lot (${mt5TradableLot}): Risk = <strong class="text-red-400">-$${autoRiskForTradable.toFixed(2)}</strong> | Target = <strong class="text-emerald-400">+$${autoTargetForTradable.toFixed(2)}</strong>`;
             }
 
             document.getElementById('res-partial-info').innerHTML = `Book (${partialPct}%): <strong>$${bookAmount.toFixed(2)}</strong> (${bookLotStr} Lot)<br>Hold (${remainingPct}%): <strong>$${holdAmount.toFixed(2)}</strong> (${holdLotStr} Lot)`;
@@ -752,21 +761,29 @@
 
         async function closeTrade(result) {
             let acc = accounts[currentAccountId];
-            let riskAmount = (acc.capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
+            let slValue = parseFloat(document.getElementById('sl-pips').value) || 1;
+            let asset = document.getElementById('asset-type').value;
+            let valuePerPointPerLot = asset === 'gold' ? 1.0 : (asset === 'nasdaq' ? 2.0 : (asset === 'btc' ? 1.0 : 10.0));
+
+            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
+            let riskPct = parseFloat(document.getElementById('risk-pct').value) || 1;
+            let riskAmount = (acc.capital * riskPct) / 100;
+            let rawLot = riskAmount / (slValue * valuePerPointPerLot);
+            let mt5TradableLot = rawLot < 0.01 ? 0.01 : Math.round(rawLot * 100) / 100;
+            
+            let effectiveLot = (!isNaN(customLotVal) && customLotVal > 0) ? customLotVal : mt5TradableLot;
+
             let rrMultiplier = 0;
             if(activeManagement === '1:1') rrMultiplier = 1;
             else if(activeManagement === '1:2') rrMultiplier = 2;
             else if(activeManagement === '1:3') rrMultiplier = 3;
             else if(activeManagement === '1:5') rrMultiplier = 5;
             
+            let exactRiskForLot = slValue * effectiveLot * valuePerPointPerLot;
+            let exactTargetForLot = exactRiskForLot * rrMultiplier;
+
             let customVal = parseFloat(document.getElementById('custom-pnl').value);
-            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
-            let mt5TradableLot = parseFloat(document.getElementById('res-mt5-lot').innerText.replace(/[()]/g, '')) || 0.01;
-            
-            let baseTradeAmt = isNaN(customVal) ? (result === 'WIN' ? riskAmount * rrMultiplier : -riskAmount) : (result === 'WIN' ? Math.abs(customVal) : -Math.abs(customVal));
-            
-            // Agar custom lot enter ki hui hai toh PnL ko scale kar dena
-            let tradeAmount = (!isNaN(customLotVal) && customLotVal > 0) ? baseTradeAmt * (customLotVal / mt5TradableLot) : baseTradeAmt;
+            let tradeAmount = isNaN(customVal) ? (result === 'WIN' ? exactTargetForLot : -exactRiskForLot) : (result === 'WIN' ? Math.abs(customVal) : -Math.abs(customVal));
             
             acc.capital += tradeAmount;
             acc.todayPnl += tradeAmount;
@@ -795,26 +812,35 @@
 
         async function closePartialTrade() {
             let acc = accounts[currentAccountId];
-            let riskAmount = (acc.capital * (parseFloat(document.getElementById('risk-pct').value) || 1)) / 100;
+            let slValue = parseFloat(document.getElementById('sl-pips').value) || 1;
+            let asset = document.getElementById('asset-type').value;
+            let valuePerPointPerLot = asset === 'gold' ? 1.0 : (asset === 'nasdaq' ? 2.0 : (asset === 'btc' ? 1.0 : 10.0));
+
+            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
+            let riskPct = parseFloat(document.getElementById('risk-pct').value) || 1;
+            let riskAmount = (acc.capital * riskPct) / 100;
+            let rawLot = riskAmount / (slValue * valuePerPointPerLot);
+            let mt5TradableLot = rawLot < 0.01 ? 0.01 : Math.round(rawLot * 100) / 100;
+            
+            let effectiveLot = (!isNaN(customLotVal) && customLotVal > 0) ? customLotVal : mt5TradableLot;
+
             let rrMultiplier = 0;
             if(activeManagement === '1:1') rrMultiplier = 1;
             else if(activeManagement === '1:2') rrMultiplier = 2;
             else if(activeManagement === '1:3') rrMultiplier = 3;
             else if(activeManagement === '1:5') rrMultiplier = 5;
             
-            let targetReturn = riskAmount * rrMultiplier;
+            let exactRiskForLot = slValue * effectiveLot * valuePerPointPerLot;
+            let exactTargetForLot = exactRiskForLot * rrMultiplier;
+
             let partialPct = parseFloat(document.getElementById('partial-pct').value) || 50;
             let remainingPct = 100 - partialPct;
             
-            let bookProfit = (targetReturn * partialPct) / 100;
-            let holdProfitTarget = (targetReturn * remainingPct) / 100;
+            let bookProfit = (exactTargetForLot * partialPct) / 100;
+            let holdProfitTarget = exactTargetForLot - bookProfit;
             
             let customVal = parseFloat(document.getElementById('custom-pnl').value);
-            let customLotVal = parseFloat(document.getElementById('custom-lot-input').value);
-            let mt5TradableLot = parseFloat(document.getElementById('res-mt5-lot').innerText.replace(/[()]/g, '')) || 0.01;
-            
-            let baseBookAmt = isNaN(customVal) ? bookProfit : Math.abs(customVal);
-            let tradeAmount = (!isNaN(customLotVal) && customLotVal > 0) ? baseBookAmt * (customLotVal / mt5TradableLot) : baseBookAmt;
+            let tradeAmount = isNaN(customVal) ? bookProfit : Math.abs(customVal);
 
             acc.capital += tradeAmount;
             acc.todayPnl += tradeAmount;
@@ -829,14 +855,12 @@
             let screenshotFile = document.getElementById('trade-screenshot').files[0];
             let noteText = (document.getElementById('trade-note').value || 'Custom Partial') + ` (${partialPct}% Booked)`;
 
-            let holdTargetScaled = (!isNaN(customLotVal) && customLotVal > 0) ? holdProfitTarget * (customLotVal / mt5TradableLot) : holdProfitTarget;
-
             acc.activeHoldingTrade = {
                 asset: assetName + ` (${accType})`,
                 direction,
                 management: activeManagement,
                 remainingPct,
-                holdProfitTarget: holdTargetScaled,
+                holdProfitTarget,
                 note: document.getElementById('trade-note').value || 'No note',
                 screenshot: pastedImageBase64 || null
             };
